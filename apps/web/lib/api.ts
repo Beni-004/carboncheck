@@ -2,10 +2,23 @@ import { getMockResult, getMockBulkResults, getMockLeaderboard, TrustScoreResult
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
+// Helper to log integration status
+const logApiCall = (endpoint: string, useMock: boolean, error?: any) => {
+  if (typeof window !== 'undefined') {
+    console.log(`[CarbonCheck API] ${endpoint}:`, {
+      mode: useMock ? 'MOCK' : 'LIVE',
+      apiBase: API_BASE || 'NOT_SET',
+      error: error?.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 export async function verifyCreditId(
   creditId: string
 ): Promise<TrustScoreResult> {
   if (!API_BASE) {
+    logApiCall('/api/verify', true);
     return new Promise((resolve) => {
       setTimeout(() => resolve(getMockResult(creditId)), 1500);
     });
@@ -21,12 +34,15 @@ export async function verifyCreditId(
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    logApiCall('/api/verify', false);
+    return data;
   } catch (error) {
     console.warn("API call failed, falling back to mock data", error);
+    logApiCall('/api/verify', true, error);
     return getMockResult(creditId);
   }
 }
@@ -35,6 +51,7 @@ export async function verifyBulkCredits(
   creditIds: string[]
 ): Promise<BulkVerifyResult> {
   if (!API_BASE) {
+    logApiCall('/api/verify/bulk', true);
     return new Promise((resolve) => {
       setTimeout(() => resolve(getMockBulkResults(creditIds)), 2500);
     });
@@ -50,12 +67,15 @@ export async function verifyBulkCredits(
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    logApiCall('/api/verify/bulk', false);
+    return data;
   } catch (error) {
     console.warn("API call failed, falling back to mock data", error);
+    logApiCall('/api/verify/bulk', true, error);
     return getMockBulkResults(creditIds);
   }
 }
@@ -65,6 +85,7 @@ export async function getLeaderboard(
   limit: number = 50
 ): Promise<LeaderboardEntry[]> {
   if (!API_BASE) {
+    logApiCall('/api/leaderboard', true);
     return new Promise((resolve) => {
       setTimeout(() => resolve(getMockLeaderboard(category, limit)), 800);
     });
@@ -83,12 +104,38 @@ export async function getLeaderboard(
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    logApiCall('/api/leaderboard', false);
+    return data;
   } catch (error) {
     console.warn("API call failed, falling back to mock data", error);
+    logApiCall('/api/leaderboard', true, error);
     return getMockLeaderboard(category, limit);
+  }
+}
+
+// Health check helper for smoke testing
+export async function checkApiHealth(): Promise<{ status: string; mode: 'live' | 'mock' }> {
+  if (!API_BASE) {
+    return { status: 'mock_mode', mode: 'mock' };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/health`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Health check failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { status: data.status || 'unknown', mode: 'live' };
+  } catch (error) {
+    console.warn("Health check failed", error);
+    return { status: 'unavailable', mode: 'mock' };
   }
 }

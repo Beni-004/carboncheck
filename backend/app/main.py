@@ -3,6 +3,7 @@ CarbonCheck API - Main FastAPI Application
 Provides credit verification, bulk audit, and leaderboard endpoints.
 """
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,9 +16,23 @@ app = FastAPI(
 )
 
 # CORS configuration for frontend integration
+# TODO: Set FRONTEND_URL environment variable in Railway to your Vercel URL
+frontend_url = os.getenv("FRONTEND_URL", "")
+allowed_origins = [
+    "http://localhost:3000",  # Local development
+    "http://localhost:3001",  # Alternate local port
+]
+
+if frontend_url:
+    allowed_origins.append(frontend_url)
+    # Also allow preview deployments if using Vercel pattern
+    if "vercel.app" in frontend_url:
+        base_domain = frontend_url.split("//")[1].split(".")[0]
+        allowed_origins.append(f"https://*.vercel.app")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: Restrict to specific frontend origin in production
+    allow_origins=allowed_origins if frontend_url else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
