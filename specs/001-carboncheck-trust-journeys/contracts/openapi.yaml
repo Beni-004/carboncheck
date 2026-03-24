@@ -22,17 +22,25 @@ paths:
       tags: [Verify]
       summary: Verify one or many carbon credit IDs
       description: |
-        Accepts either a single credit_id or up to 50 credit_ids.
+        Accepts 1-50 project IDs for verification.
         Returns deterministic score breakdown over four checks.
+        Supports cache fallback when external sources timeout (3s limit).
       operationId: verifyCredits
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: '#/components/schemas/VerifySingleRequest'
-                - $ref: '#/components/schemas/VerifyBulkRequest'
+              $ref: '#/components/schemas/VerifyRequest'
+            examples:
+              single:
+                summary: Single project verification
+                value:
+                  project_ids: ["PROJ-001"]
+              bulk:
+                summary: Bulk verification (up to 50)
+                value:
+                  project_ids: ["PROJ-001", "PROJ-002", "PROJ-003"]
       responses:
         '200':
           description: Successful verification response
@@ -40,12 +48,110 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                success_live:
+                  summary: Successful verification with live data
+                  value:
+                    results:
+                      - project_id: "PROJ-001"
+                        total_score: 45.5
+                        verdict: "WARNING"
+                        score_breakdown:
+                          baseline_match: 12.5
+                          additionality: 0.0
+                          permanence_risk: 20.0
+                          double_counting: 13.0
+                        fallback_used: false
+                        data_mode: "live"
+                        source_provenance:
+                          - source_name: "Ember"
+                            fetched_at: "2024-03-24T10:30:00Z"
+                            freshness_state: "live"
+                            cache_age_seconds: null
+                          - source_name: "CEA"
+                            fetched_at: "2024-03-24T10:30:01Z"
+                            freshness_state: "live"
+                            cache_age_seconds: null
+                        computed_at: "2024-03-24T10:30:02Z"
+                        rank_in_batch: null
+                    errors: []
+                    total_requested: 1
+                    total_succeeded: 1
+                    total_failed: 0
+                success_cached:
+                  summary: Successful verification with cached fallback
+                  value:
+                    results:
+                      - project_id: "PROJ-002"
+                        total_score: 62.5
+                        verdict: "WARNING"
+                        score_breakdown:
+                          baseline_match: 12.5
+                          additionality: 25.0
+                          permanence_risk: 15.0
+                          double_counting: 10.0
+                        fallback_used: true
+                        data_mode: "cached"
+                        source_provenance:
+                          - source_name: "Ember"
+                            fetched_at: "2024-03-23T14:20:00Z"
+                            freshness_state: "cached"
+                            cache_age_seconds: 72600
+                          - source_name: "CEA"
+                            fetched_at: "2024-03-23T14:20:00Z"
+                            freshness_state: "cached"
+                            cache_age_seconds: 72600
+                        computed_at: "2024-03-24T10:30:02Z"
+                        rank_in_batch: null
+                    errors: []
+                    total_requested: 1
+                    total_succeeded: 1
+                    total_failed: 0
+                partial_failure:
+                  summary: Bulk verification with partial failures
+                  value:
+                    results:
+                      - project_id: "PROJ-001"
+                        total_score: 35.0
+                        verdict: "FAIL"
+                        score_breakdown:
+                          baseline_match: 5.0
+                          additionality: 0.0
+                          permanence_risk: 15.0
+                          double_counting: 15.0
+                        fallback_used: false
+                        data_mode: "live"
+                        source_provenance:
+                          - source_name: "Ember"
+                            fetched_at: "2024-03-24T10:30:00Z"
+                            freshness_state: "live"
+                            cache_age_seconds: null
+                        computed_at: "2024-03-24T10:30:02Z"
+                        rank_in_batch: 1
+                    errors:
+                      - project_id: "PROJ-999"
+                        error_code: "PROJECT_NOT_FOUND"
+                        error_message: "Project PROJ-999 not found in registry"
+                    total_requested: 2
+                    total_succeeded: 1
+                    total_failed: 1
         '400':
           description: Invalid payload shape
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_input:
+                  summary: Invalid request payload
+                  value:
+                    error_code: "VALIDATION_ERROR"
+                    error_message: "Request validation failed"
+                    details:
+                      - loc: ["body", "project_ids"]
+                        msg: "field required"
+                        type: "value_error.missing"
+                    timestamp: "2024-03-24T10:30:00Z"
         '422':
           description: Validation failed for one or more IDs
           content:
@@ -64,6 +170,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                degraded:
+                  summary: Service degraded (no external sources available)
+                  value:
+                    error_code: "SERVICE_DEGRADED"
+                    error_message: "Service is temporarily degraded. Request was received but could not be fully processed. Cached data may be returned where available."
+                    details:
+                      exception_type: "ConnectionError"
+                      path: "/api/verify"
+                    timestamp: "2024-03-24T10:30:00Z"
 
   /api/leaderboard:
     get:
@@ -71,20 +187,22 @@ paths:
       summary: Fetch public leaderboard of most-flagged credits
       operationId: getLeaderboard
       parameters:
-        - name: credit_type
+        - name: project_type
           in: query
           required: false
           schema:
             type: string
-            enum: [Forestry, Renewable, Soil]
+            enum: [forestry, renewable, soil, other]
+          description: Filter by project type category
         - name: limit
           in: query
           required: false
           schema:
             type: integer
             minimum: 1
-            maximum: 100
-            default: 25
+            maximum: 500
+            default: 100
+          description: Maximum number of results to return
       responses:
         '200':
           description: Leaderboard snapshot
@@ -92,6 +210,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LeaderboardResponse'
+              examples:
+                all_categories:
+                  summary: Leaderboard (all categories)
+                  value:
+                    entries:
+                      - project_id: "PROJ-042"
+                        project_type: "forestry"
+                        total_score: 25.5
+                        verdict: "FAIL"
+                        registry_name: "CDM"
+                        claimed_tco2: 50000.0
+                        rank_overall: 1
+                        rank_in_category: 1
+                      - project_id: "PROJ-089"
+                        project_type: "renewable"
+                        total_score: 38.0
+                        verdict: "FAIL"
+                        registry_name: "Verra"
+                        claimed_tco2: 25000.0
+                        rank_overall: 2
+                        rank_in_category: 1
+                    refreshed_at: "2024-03-24T10:00:00Z"
+                    total_entries: 150
+                    filter_applied: null
+                filtered:
+                  summary: Leaderboard (forestry only)
+                  value:
+                    entries:
+                      - project_id: "PROJ-042"
+                        project_type: "forestry"
+                        total_score: 25.5
+                        verdict: "FAIL"
+                        registry_name: "CDM"
+                        claimed_tco2: 50000.0
+                        rank_overall: 1
+                        rank_in_category: 1
+                    refreshed_at: "2024-03-24T10:00:00Z"
+                    total_entries: 45
+                    filter_applied: "forestry"
         '429':
           description: Rate limit exceeded
           content:
@@ -117,6 +274,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: All dependencies healthy
+                  value:
+                    status: "healthy"
+                    version: "1.0.0"
+                    dependencies:
+                      - name: "supabase"
+                        status: "healthy"
+                        latency_ms: 45
+                        last_checked: "2024-03-24T10:30:00Z"
+                        error_message: null
+                      - name: "ember_api"
+                        status: "healthy"
+                        latency_ms: null
+                        last_checked: "2024-03-24T10:30:00Z"
+                        error_message: null
+                      - name: "cea_api"
+                        status: "healthy"
+                        latency_ms: null
+                        last_checked: "2024-03-24T10:30:00Z"
+                        error_message: null
+                    checked_at: "2024-03-24T10:30:00Z"
+                degraded:
+                  summary: Some dependencies unavailable
+                  value:
+                    status: "degraded"
+                    version: "1.0.0"
+                    dependencies:
+                      - name: "supabase"
+                        status: "healthy"
+                        latency_ms: 50
+                        last_checked: "2024-03-24T10:30:00Z"
+                        error_message: null
+                      - name: "ember_api"
+                        status: "unavailable"
+                        latency_ms: 3000
+                        last_checked: "2024-03-24T10:30:00Z"
+                        error_message: "Request timed out after 3s"
+                      - name: "cea_api"
+                        status: "healthy"
+                        latency_ms: null
+                        last_checked: "2024-03-24T10:30:00Z"
+                        error_message: null
+                    checked_at: "2024-03-24T10:30:00Z"
         '503':
           description: Critical dependency failure (service intentionally degraded)
           content:
@@ -126,259 +328,304 @@ paths:
 
 components:
   schemas:
-    VerifySingleRequest:
+    VerifyRequest:
       type: object
       additionalProperties: false
-      required: [credit_id]
+      required: [project_ids]
       properties:
-        credit_id:
-          type: string
-          minLength: 3
-          maxLength: 128
-
-    VerifyBulkRequest:
-      type: object
-      additionalProperties: false
-      required: [credit_ids]
-      properties:
-        credit_ids:
+        project_ids:
           type: array
           minItems: 1
           maxItems: 50
           items:
             type: string
-            minLength: 3
+            minLength: 1
             maxLength: 128
+          description: List of project IDs to verify (1-50 items)
+
+    ScoreBreakdown:
+      type: object
+      additionalProperties: false
+      required: [baseline_match, additionality, permanence_risk, double_counting]
+      properties:
+        baseline_match:
+          type: number
+          minimum: 0
+          maximum: 25
+          description: Claimed tCO2 vs actual grid generation score (0-25)
+        additionality:
+          type: number
+          minimum: 0
+          maximum: 25
+          description: Project additionality score (0-25, mandated=0)
+        permanence_risk:
+          type: number
+          minimum: 0
+          maximum: 25
+          description: Permanence risk score (0-25, lower=riskier)
+        double_counting:
+          type: number
+          minimum: 0
+          maximum: 25
+          description: Double counting risk score (0-25, multiple registries=0)
+
+    SourceProvenance:
+      type: object
+      additionalProperties: false
+      required: [source_name, fetched_at, freshness_state, cache_age_seconds]
+      properties:
+        source_name:
+          type: string
+          description: Name of external data source
+          enum: [Ember, CEA, Grid-India, REC-Registry]
+        fetched_at:
+          type: string
+          format: date-time
+          description: Timestamp when data was fetched from source
+        freshness_state:
+          type: string
+          enum: [live, cached]
+          description: Whether data is fresh from API or fallback cache
+        cache_age_seconds:
+          type: integer
+          nullable: true
+          description: Age of cached data in seconds (null if live)
+
+    TrustScoreResult:
+      type: object
+      additionalProperties: false
+      required:
+        - project_id
+        - total_score
+        - verdict
+        - score_breakdown
+        - fallback_used
+        - data_mode
+        - source_provenance
+        - computed_at
+        - rank_in_batch
+      properties:
+        project_id:
+          type: string
+          description: Project identifier
+        total_score:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Total trust score (0-100)
+        verdict:
+          type: string
+          enum: [FAIL, WARNING, PASS]
+          description: "Overall verdict: FAIL (<40), WARNING (40-69), PASS (>=70)"
+        score_breakdown:
+          $ref: '#/components/schemas/ScoreBreakdown'
+        fallback_used:
+          type: boolean
+          description: True if any source used cached data due to timeout/failure
+        data_mode:
+          type: string
+          enum: [live, cached, partial]
+          description: "Data freshness: live (all fresh), cached (all cached), partial (mixed)"
+        source_provenance:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceProvenance'
+          description: Provenance tracking for all external sources used
+        computed_at:
+          type: string
+          format: date-time
+          description: Timestamp when score was computed
+        rank_in_batch:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: Rank within bulk verification batch (null for single verify)
+
+    VerifyErrorDetail:
+      type: object
+      additionalProperties: false
+      required: [project_id, error_code, error_message]
+      properties:
+        project_id:
+          type: string
+          description: Project identifier that failed
+        error_code:
+          type: string
+          description: Machine-readable error code
+          enum: [PROJECT_NOT_FOUND, INVALID_PROJECT_ID, VERIFICATION_ERROR]
+        error_message:
+          type: string
+          description: Human-readable error message
 
     VerifyResponse:
       type: object
       additionalProperties: false
       required:
-        - request_id
-        - mode
-        - data_mode
-        - fallback_used
-        - timeout_seconds
         - results
         - errors
+        - total_requested
+        - total_succeeded
+        - total_failed
       properties:
-        request_id:
-          type: string
-          format: uuid
-        mode:
-          type: string
-          enum: [single, bulk]
-        data_mode:
-          type: string
-          enum: [live, mixed, cache]
-        fallback_used:
-          type: boolean
-        timeout_seconds:
-          type: integer
-          const: 3
         results:
           type: array
           items:
-            $ref: '#/components/schemas/VerifyResult'
+            $ref: '#/components/schemas/TrustScoreResult'
+          description: Successfully computed trust scores
         errors:
           type: array
           items:
-            $ref: '#/components/schemas/ItemError'
+            $ref: '#/components/schemas/VerifyErrorDetail'
+          description: Failed project verifications with error details
+        total_requested:
+          type: integer
+          minimum: 1
+          description: Total number of project IDs requested
+        total_succeeded:
+          type: integer
+          minimum: 0
+          description: Number of successful verifications
+        total_failed:
+          type: integer
+          minimum: 0
+          description: Number of failed verifications
 
-    VerifyResult:
+    LeaderboardEntry:
       type: object
       additionalProperties: false
       required:
-        - credit_id
-        - trust_score
+        - project_id
+        - project_type
+        - total_score
         - verdict
-        - rank
-        - checks
-        - evidence_summary
-        - provenance
+        - registry_name
+        - claimed_tco2
+        - rank_overall
+        - rank_in_category
       properties:
-        credit_id:
+        project_id:
           type: string
-        trust_score:
+          description: Project identifier
+        project_type:
+          type: string
+          enum: [forestry, renewable, soil, other]
+          description: Project category
+        total_score:
           type: number
           minimum: 0
           maximum: 100
+          description: Total trust score (0-100)
         verdict:
           type: string
-          enum: [FAIL, WARNING, PASS, UNSCORED]
-        rank:
+          enum: [FAIL, WARNING, PASS]
+          description: Overall verdict
+        registry_name:
+          type: string
+          description: Registry name where project is listed
+        claimed_tco2:
+          type: number
+          description: Claimed tCO2 reduction
+        rank_overall:
           type: integer
           minimum: 1
-          nullable: true
-        checks:
-          type: object
-          additionalProperties: false
-          required: [baseline_match, additionality, permanence_risk, double_counting]
-          properties:
-            baseline_match:
-              $ref: '#/components/schemas/CheckMetric'
-            additionality:
-              $ref: '#/components/schemas/CheckMetric'
-            permanence_risk:
-              $ref: '#/components/schemas/CheckMetric'
-            double_counting:
-              $ref: '#/components/schemas/CheckMetric'
-        evidence_summary:
-          type: string
-          minLength: 1
-        provenance:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/SourceProvenance'
-
-    CheckMetric:
-      type: object
-      additionalProperties: false
-      required: [score, weight]
-      properties:
-        score:
-          type: number
-          minimum: 0
-          maximum: 100
-        weight:
-          type: number
-          enum: [0.30, 0.25, 0.20]
-
-    SourceProvenance:
-      type: object
-      additionalProperties: false
-      required: [source, fetched_at, freshness_state, from_cache]
-      properties:
-        source:
-          type: string
-          enum: [ember_api, cea, grid_india, rec_registry]
-        fetched_at:
-          type: string
-          format: date-time
-        freshness_state:
-          type: string
-          enum: [fresh, stale, missing]
-        from_cache:
-          type: boolean
-
-    ItemError:
-      type: object
-      additionalProperties: false
-      required: [credit_id, code, message]
-      properties:
-        credit_id:
-          type: string
-        code:
-          type: string
-          enum: [INVALID_ID, UNKNOWN_ID, UNSCORED_NO_DATA]
-        message:
-          type: string
+          description: Overall rank (1 = worst score)
+        rank_in_category:
+          type: integer
+          minimum: 1
+          description: Rank within project category (1 = worst in category)
 
     LeaderboardResponse:
       type: object
       additionalProperties: false
-      required: [snapshot_at, freshness_state, items]
+      required:
+        - entries
+        - refreshed_at
+        - total_entries
+        - filter_applied
       properties:
-        snapshot_at:
-          type: string
-          format: date-time
-        freshness_state:
-          type: string
-          enum: [fresh, stale, degraded]
-        items:
+        entries:
           type: array
           items:
-            $ref: '#/components/schemas/LeaderboardItem'
+            $ref: '#/components/schemas/LeaderboardEntry'
+          description: Ranked leaderboard entries
+        refreshed_at:
+          type: string
+          format: date-time
+          description: Timestamp when leaderboard was last refreshed
+        total_entries:
+          type: integer
+          minimum: 0
+          description: Total number of entries in full leaderboard
+        filter_applied:
+          type: string
+          nullable: true
+          enum: [forestry, renewable, soil, other]
+          description: Project type filter applied (if any)
 
-    LeaderboardItem:
+    DependencyHealth:
       type: object
       additionalProperties: false
-      required:
-        - credit_id
-        - credit_type
-        - flagged_count_24h
-        - avg_trust_score_24h
-        - current_verdict
-        - rank_global
-        - rank_by_type
-        - evidence_snippet
+      required: [name, status, latency_ms, last_checked, error_message]
       properties:
-        credit_id:
+        name:
           type: string
-        credit_type:
+          description: Dependency name
+          enum: [supabase, ember_api, cea_api, grid_india_api, rec_registry_api]
+        status:
           type: string
-          enum: [Forestry, Renewable, Soil]
-        flagged_count_24h:
+          enum: [healthy, degraded, unavailable]
+          description: Health status
+        latency_ms:
           type: integer
-          minimum: 0
-        avg_trust_score_24h:
-          type: number
-          minimum: 0
-          maximum: 100
-        current_verdict:
+          nullable: true
+          description: Response latency in milliseconds (if available)
+        last_checked:
           type: string
-          enum: [FAIL, WARNING, PASS, UNSCORED]
-        rank_global:
-          type: integer
-          minimum: 1
-        rank_by_type:
-          type: integer
-          minimum: 1
-        evidence_snippet:
+          format: date-time
+          description: Timestamp of last health check
+        error_message:
           type: string
+          nullable: true
+          description: Error message if status is degraded/unavailable
 
     HealthResponse:
       type: object
       additionalProperties: false
-      required: [status, service, dependencies]
+      required: [status, version, dependencies, checked_at]
       properties:
         status:
           type: string
           enum: [healthy, degraded, unavailable]
-        service:
+          description: Overall system health status
+        version:
           type: string
-          enum: [carboncheck-api]
+          description: API version
         dependencies:
-          type: object
-          additionalProperties: false
-          required: [supabase, ember_api, cea, grid_india, rec_registry]
-          properties:
-            supabase:
-              $ref: '#/components/schemas/DependencyState'
-            ember_api:
-              $ref: '#/components/schemas/DependencyState'
-            cea:
-              $ref: '#/components/schemas/DependencyState'
-            grid_india:
-              $ref: '#/components/schemas/DependencyState'
-            rec_registry:
-              $ref: '#/components/schemas/DependencyState'
-
-    DependencyState:
-      type: object
-      additionalProperties: false
-      required: [status, timeout_seconds]
-      properties:
-        status:
+          type: array
+          items:
+            $ref: '#/components/schemas/DependencyHealth'
+          description: Health status of all dependencies
+        checked_at:
           type: string
-          enum: [up, down, timeout, degraded]
-        timeout_seconds:
-          type: integer
-          const: 3
+          format: date-time
+          description: Timestamp of this health check
 
     ErrorResponse:
       type: object
       additionalProperties: false
-      required: [status, code, message, request_id]
+      required: [error_code, error_message, timestamp]
       properties:
-        status:
+        error_code:
           type: string
-          enum: [error, degraded]
-        code:
+          description: Machine-readable error code
+        error_message:
           type: string
-        message:
+          description: Human-readable error message
+        details:
+          type: object
+          nullable: true
+          description: Additional error context (optional)
+        timestamp:
           type: string
-        request_id:
-          type: string
-          format: uuid
+          format: date-time
+          description: Error timestamp
