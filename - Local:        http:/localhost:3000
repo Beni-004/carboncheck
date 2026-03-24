@@ -1,0 +1,13 @@
+
+### 5. Test Integration
+
+Open http://localhost:3000 in your browser.
+
+#### Test Single Verify:
+1. Click "Try Single Verify →"
+2. Enter: `VCS-2024-001`
+3. Click "Verify Credit"
+4. Should see Trust Score of 92 with PASS verdict in < 2 seconds
+
+#### Check Browser Console:
+You should see logs like:

@@ -1,0 +1,20 @@
+
+### Troubleshooting
+
+**Problem:** Frontend shows mock data
+- **Solution:** Verify `.env.local` exists with correct URL
+- Restart dev server: `npm run dev`
+
+**Problem:** CORS errors in console
+- **Solution:** Check backend is running on port 8000
+- Verify CORS middleware is configured in `backend/app/main.py`
+
+**Problem:** Connection refused
+- **Solution:** Backend not running - start with `uvicorn app.main:app --reload`
+
+**Problem:** 404 Not Found on /api/verify
+- **Solution:** Check backend routers are registered in `main.py`
+
+## Production Deployment
+
+See `STATUS.md` for production deployment steps to Railway and Vercel.
