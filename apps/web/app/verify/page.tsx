@@ -11,9 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TrustScoreRing } from "@/components/trust-score-ring";
-import { VerdictBadge } from "@/components/verdict-badge";
+import { TrustScoreCard } from "@/components/trust-score-card";
 import { FraudRiskList } from "@/components/fraud-risk-list";
+import { ProvenanceBadges } from "@/components/provenance-badges";
 import { verifyCreditId } from "@/lib/api";
 import { TrustScoreResult } from "@/lib/mock";
 import { Loader2, ArrowLeft } from "lucide-react";
@@ -84,18 +84,14 @@ export default function VerifyPage() {
                     className="text-base"
                   />
                 </div>
-                {error && (
-                  <p className="text-sm text-red-400">{error}</p>
-                )}
+                {error && <p className="text-sm text-red-400">{error}</p>}
                 <Button
                   type="submit"
                   disabled={loading}
                   className="w-full"
                   size="lg"
                 >
-                  {loading && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  )}
+                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   {loading ? "Verifying..." : "Verify Credit"}
                 </Button>
               </form>
@@ -104,29 +100,19 @@ export default function VerifyPage() {
 
           {result && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <Card>
-                <CardHeader className="text-center">
-                  <CardTitle className="mb-6">Trust Score Result</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex justify-center">
-                    <TrustScoreRing score={result.trustScore} size="lg" />
-                  </div>
-                  <div className="flex flex-col items-center gap-4">
-                    <VerdictBadge verdict={result.verdict} size="lg" />
-                    <p className="text-sm text-muted-foreground text-center">
-                      Credit ID: <span className="font-mono text-foreground">{result.creditId}</span>
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <TrustScoreCard
+                creditId={result.creditId}
+                trustScore={result.trustScore}
+                verdict={result.verdict}
+                checks={result.checks}
+              />
 
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Credit Details</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid md:grid-cols-2 gap-4 mb-6">
                     <div>
                       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                         Category
@@ -149,8 +135,22 @@ export default function VerifyPage() {
                       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                         CO₂ Equivalent
                       </p>
-                      <p className="font-semibold">{result.co2Equivalent} tonnes</p>
+                      <p className="font-semibold">
+                        {result.co2Equivalent} tonnes
+                      </p>
                     </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                      Data Provenance
+                    </p>
+                    <ProvenanceBadges
+                      dataMode={result.dataMode}
+                      fallbackUsed={result.fallbackUsed}
+                      dataFreshness={result.dataFreshness}
+                      verifiedAt={result.verifiedAt}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -193,15 +193,21 @@ export default function VerifyPage() {
               <div className="grid grid-cols-3 gap-4 text-xs text-muted-foreground">
                 <div>
                   <p className="mb-2">Try these examples:</p>
-                  <code className="block font-mono text-foreground/70">VCS-2024-001</code>
+                  <code className="block font-mono text-foreground/70">
+                    VCS-2024-001
+                  </code>
                 </div>
                 <div>
                   <p className="mb-2"></p>
-                  <code className="block font-mono text-foreground/70">GOLD-2023-556</code>
+                  <code className="block font-mono text-foreground/70">
+                    GOLD-2023-556
+                  </code>
                 </div>
                 <div>
                   <p className="mb-2"></p>
-                  <code className="block font-mono text-foreground/70">ACR-2021-999</code>
+                  <code className="block font-mono text-foreground/70">
+                    ACR-2021-999
+                  </code>
                 </div>
               </div>
             </div>
