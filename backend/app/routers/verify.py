@@ -48,6 +48,7 @@ class TrustScoreResult(BaseModel):
     dataMode: Optional[str] = "live"
     fallbackUsed: Optional[bool] = False
     dataFreshness: Optional[str] = "Real-time"
+    projectUrl: Optional[str] = None
 
 
 class BulkVerifyResult(BaseModel):
