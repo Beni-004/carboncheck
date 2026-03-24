@@ -1,0 +1,384 @@
+openapi: 3.1.0
+info:
+  title: CarbonCheck API
+  version: 0.1.0
+  description: |
+    Trust scoring and public leaderboard API.
+    Design constraints:
+    - External API timeout per source: 3 seconds
+    - Supabase cache fallback when upstream source fails
+    - Never return HTTP 500
+servers:
+  - url: https://api.carboncheck.example
+
+tags:
+  - name: Verify
+  - name: Leaderboard
+  - name: Health
+
+paths:
+  /api/verify:
+    post:
+      tags: [Verify]
+      summary: Verify one or many carbon credit IDs
+      description: |
+        Accepts either a single credit_id or up to 50 credit_ids.
+        Returns deterministic score breakdown over four checks.
+      operationId: verifyCredits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/VerifySingleRequest'
+                - $ref: '#/components/schemas/VerifyBulkRequest'
+      responses:
+        '200':
+          description: Successful verification response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+        '400':
+          description: Invalid payload shape
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation failed for one or more IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Degraded service with no scoreable data (still non-500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/leaderboard:
+    get:
+      tags: [Leaderboard]
+      summary: Fetch public leaderboard of most-flagged credits
+      operationId: getLeaderboard
+      parameters:
+        - name: credit_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Forestry, Renewable, Soil]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        '200':
+          description: Leaderboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Cache unavailable/degraded (still non-500)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Service and dependency health
+      operationId: getHealth
+      responses:
+        '200':
+          description: Healthy or degraded but serving
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Critical dependency failure (service intentionally degraded)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    VerifySingleRequest:
+      type: object
+      additionalProperties: false
+      required: [credit_id]
+      properties:
+        credit_id:
+          type: string
+          minLength: 3
+          maxLength: 128
+
+    VerifyBulkRequest:
+      type: object
+      additionalProperties: false
+      required: [credit_ids]
+      properties:
+        credit_ids:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+            minLength: 3
+            maxLength: 128
+
+    VerifyResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - request_id
+        - mode
+        - data_mode
+        - fallback_used
+        - timeout_seconds
+        - results
+        - errors
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [single, bulk]
+        data_mode:
+          type: string
+          enum: [live, mixed, cache]
+        fallback_used:
+          type: boolean
+        timeout_seconds:
+          type: integer
+          const: 3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerifyResult'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemError'
+
+    VerifyResult:
+      type: object
+      additionalProperties: false
+      required:
+        - credit_id
+        - trust_score
+        - verdict
+        - rank
+        - checks
+        - evidence_summary
+        - provenance
+      properties:
+        credit_id:
+          type: string
+        trust_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        verdict:
+          type: string
+          enum: [FAIL, WARNING, PASS, UNSCORED]
+        rank:
+          type: integer
+          minimum: 1
+          nullable: true
+        checks:
+          type: object
+          additionalProperties: false
+          required: [baseline_match, additionality, permanence_risk, double_counting]
+          properties:
+            baseline_match:
+              $ref: '#/components/schemas/CheckMetric'
+            additionality:
+              $ref: '#/components/schemas/CheckMetric'
+            permanence_risk:
+              $ref: '#/components/schemas/CheckMetric'
+            double_counting:
+              $ref: '#/components/schemas/CheckMetric'
+        evidence_summary:
+          type: string
+          minLength: 1
+        provenance:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SourceProvenance'
+
+    CheckMetric:
+      type: object
+      additionalProperties: false
+      required: [score, weight]
+      properties:
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        weight:
+          type: number
+          enum: [0.30, 0.25, 0.20]
+
+    SourceProvenance:
+      type: object
+      additionalProperties: false
+      required: [source, fetched_at, freshness_state, from_cache]
+      properties:
+        source:
+          type: string
+          enum: [ember_api, cea, grid_india, rec_registry]
+        fetched_at:
+          type: string
+          format: date-time
+        freshness_state:
+          type: string
+          enum: [fresh, stale, missing]
+        from_cache:
+          type: boolean
+
+    ItemError:
+      type: object
+      additionalProperties: false
+      required: [credit_id, code, message]
+      properties:
+        credit_id:
+          type: string
+        code:
+          type: string
+          enum: [INVALID_ID, UNKNOWN_ID, UNSCORED_NO_DATA]
+        message:
+          type: string
+
+    LeaderboardResponse:
+      type: object
+      additionalProperties: false
+      required: [snapshot_at, freshness_state, items]
+      properties:
+        snapshot_at:
+          type: string
+          format: date-time
+        freshness_state:
+          type: string
+          enum: [fresh, stale, degraded]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardItem'
+
+    LeaderboardItem:
+      type: object
+      additionalProperties: false
+      required:
+        - credit_id
+        - credit_type
+        - flagged_count_24h
+        - avg_trust_score_24h
+        - current_verdict
+        - rank_global
+        - rank_by_type
+        - evidence_snippet
+      properties:
+        credit_id:
+          type: string
+        credit_type:
+          type: string
+          enum: [Forestry, Renewable, Soil]
+        flagged_count_24h:
+          type: integer
+          minimum: 0
+        avg_trust_score_24h:
+          type: number
+          minimum: 0
+          maximum: 100
+        current_verdict:
+          type: string
+          enum: [FAIL, WARNING, PASS, UNSCORED]
+        rank_global:
+          type: integer
+          minimum: 1
+        rank_by_type:
+          type: integer
+          minimum: 1
+        evidence_snippet:
+          type: string
+
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status, service, dependencies]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unavailable]
+        service:
+          type: string
+          enum: [carboncheck-api]
+        dependencies:
+          type: object
+          additionalProperties: false
+          required: [supabase, ember_api, cea, grid_india, rec_registry]
+          properties:
+            supabase:
+              $ref: '#/components/schemas/DependencyState'
+            ember_api:
+              $ref: '#/components/schemas/DependencyState'
+            cea:
+              $ref: '#/components/schemas/DependencyState'
+            grid_india:
+              $ref: '#/components/schemas/DependencyState'
+            rec_registry:
+              $ref: '#/components/schemas/DependencyState'
+
+    DependencyState:
+      type: object
+      additionalProperties: false
+      required: [status, timeout_seconds]
+      properties:
+        status:
+          type: string
+          enum: [up, down, timeout, degraded]
+        timeout_seconds:
+          type: integer
+          const: 3
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [status, code, message, request_id]
+      properties:
+        status:
+          type: string
+          enum: [error, degraded]
+        code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+          format: uuid
