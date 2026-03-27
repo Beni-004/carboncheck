@@ -1,5 +1,6 @@
 # Multi-stage build for optimized backend image
 # Target size: < 500 MB (production runtime only)
+# Updated: 2026-03-28 - Fixed GDAL package dependencies for Debian Bookworm
 
 # ============================================
 # Stage 1: Builder - Install dependencies
