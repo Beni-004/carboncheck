@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # UNDP Registry Service (NestJS)
+  registry-service:
+    build:
+      context: ./registry-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - REGISTRY_PORT=3001
+      - REGISTRY_DB_HOST=registry-db
+      - REGISTRY_DB_PORT=5432
+      - REGISTRY_DB_USER=postgres
+      - REGISTRY_DB_PASSWORD=${REGISTRY_DB_PASSWORD:-postgres}
+      - REGISTRY_DB_NAME=carbon_registry
+      - SYSTEM_COUNTRY=NG
+      - SYSTEM_COUNTRY_NAME=Nigeria
+    depends_on:
+      registry-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - carboncheck-network
+
+  # Registry PostgreSQL Database
+  registry-db:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${REGISTRY_DB_PASSWORD:-postgres}
+      - POSTGRES_DB=carbon_registry
+    volumes:
+      - registry-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - carboncheck-network
+
+  # Integration Layer (FastAPI)
+  integration-layer:
+    build:
+      context: ./integration-layer
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REGISTRY_SERVICE_URL=http://registry-service:3001
+      - REGISTRY_TIMEOUT=30
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - SATELLITE_API_ENABLED=${SATELLITE_API_ENABLED:-true}
+      - SENTINEL_CLIENT_ID=${SENTINEL_CLIENT_ID:-}
+      - SENTINEL_CLIENT_SECRET=${SENTINEL_CLIENT_SECRET:-}
+      - SENTINEL_API_URL=${SENTINEL_API_URL:-https://sh.dataspace.copernicus.eu/api/v1/process}
+      - ENABLE_AUTO_VERIFICATION=${ENABLE_AUTO_VERIFICATION:-false}
+      - ENABLE_REGISTRY_SYNC=${ENABLE_REGISTRY_SYNC:-true}
+    depends_on:
+      - registry-service
+    restart: unless-stopped
+    networks:
+      - carboncheck-network
+
+volumes:
+  registry-pgdata:
+
+networks:
+  carboncheck-network:
+    driver: bridge

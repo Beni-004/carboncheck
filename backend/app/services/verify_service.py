@@ -16,7 +16,7 @@ from app.db import get_db_client
 
 # Import verification engine layers
 from app.verification_engine.ground_layer.registry_client import RegistryClient
-from app.verification_engine.satellite_layer.gee_client import GEEClient
+from app.verification_engine.satellite_layer.sentinel_client import SentinelClient
 from app.verification_engine.satellite_layer.ndvi_processor import NDVIProcessor
 from app.verification_engine.ai_layer.carbon_model import CarbonEstimator
 from app.verification_engine.scoring_layer.fraud_scorer import FraudScorer
@@ -63,19 +63,19 @@ async def verify_single(credit_id: str) -> dict:
             logger.warning(f"Ground layer: Project {credit_id} not found in {registry}")
             return build_unverified_result(
                 credit_id, project_url, registry, "Unknown",
-                data_mode="fetch_failed",
+                data_mode="cached",
                 data_freshness="Registry unavailable"
             )
 
         # STEP 2: Satellite Layer - Fetch NDVI Time Series
         logger.info(f"[Satellite Layer] Fetching NDVI data for {credit_id}")
-        gee_client = GEEClient()
+        sentinel_client = SentinelClient()
 
         # Calculate date range
         start_date = f"{ground_data.vintage_year}-01-01"
         end_date = datetime.now().strftime('%Y-%m-%d')
 
-        ndvi_timeseries, satellite_fallback = await gee_client.get_ndvi_timeseries(
+        ndvi_timeseries, satellite_fallback = await sentinel_client.get_ndvi_timeseries(
             lat=ground_data.location.latitude,
             lon=ground_data.location.longitude,
             start_date=start_date,
@@ -90,7 +90,7 @@ async def verify_single(credit_id: str) -> dict:
             logger.warning(f"Satellite layer: No NDVI data for {credit_id}")
             return build_unverified_result(
                 credit_id, project_url, ground_data.registry, ground_data.project_type,
-                data_mode="satellite_unavailable",
+                data_mode="partial",
                 data_freshness="No satellite coverage"
             )
 
@@ -133,10 +133,10 @@ async def verify_single(credit_id: str) -> dict:
             data_mode = "live"
             data_freshness = "Real-time"
         elif len(fallback_sources) >= 2:
-            data_mode = "cache"
+            data_mode = "cached"
             data_freshness = f"Cached ({', '.join(fallback_sources)} layers)"
         else:
-            data_mode = "mixed"
+            data_mode = "partial"
             data_freshness = f"Mixed (cached: {', '.join(fallback_sources)})"
 
         # Get proper registry name
@@ -187,7 +187,7 @@ async def verify_single(credit_id: str) -> dict:
         logger.error(f"Verification engine error for {credit_id}: {e}", exc_info=True)
         return build_unverified_result(
             credit_id, project_url, registry, "Unknown",
-            data_mode="engine_error",
+            data_mode="cached",
             data_freshness=f"Error: {str(e)[:50]}"
         )
 
@@ -309,11 +309,11 @@ def _generate_fraud_risks_from_checks(checks: list, trust_score: int) -> list:
 
 
 def build_unverified_result(
-    credit_id: str, 
-    project_url: Optional[str], 
-    issuer: str, 
+    credit_id: str,
+    project_url: Optional[str],
+    issuer: str,
     category: str,
-    data_mode: str = "fetch_failed",
+    data_mode: str = "cached",
     data_freshness: str = "Unavailable"
 ) -> dict:
     """

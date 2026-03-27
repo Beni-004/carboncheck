@@ -87,7 +87,9 @@ class CacheRepository:
                 "cached_at": datetime.utcnow().isoformat() + "Z"
             }
 
-            self.db.client.table("verification_cache").upsert(cache_entry).execute()
+            self.db.client.table("verification_cache").upsert(
+                cache_entry, on_conflict="project_id,layer"
+            ).execute()
             logger.info(f"Saved ground cache for {project_id}")
             return True
 
@@ -152,7 +154,9 @@ class CacheRepository:
                 "cached_at": datetime.utcnow().isoformat() + "Z"
             }
 
-            self.db.client.table("verification_cache").upsert(cache_entry).execute()
+            self.db.client.table("verification_cache").upsert(
+                cache_entry, on_conflict="project_id,layer"
+            ).execute()
             logger.info(f"Saved satellite cache for {project_id}")
             return True
 

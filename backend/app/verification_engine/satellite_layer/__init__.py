@@ -1,11 +1,21 @@
 """
-Satellite Layer: Google Earth Engine integration and NDVI processing
+Satellite Layer: Sentinel Hub integration and NDVI processing.
+Fetches vegetation data from Copernicus Sentinel-2 satellite imagery.
+
+NOTE: Google Earth Engine (GEE) has been replaced with Sentinel Hub API.
+The GEEClient class is now an alias for SentinelClient for backward compatibility.
 """
-from .gee_client import GEEClient, NDVITimeSeries
+from .sentinel_client import SentinelClient, NDVITimeSeries, NDVIResult, get_ndvi
 from .ndvi_processor import NDVIProcessor
 
+# Backward compatibility alias
+GEEClient = SentinelClient
+
 __all__ = [
-    "GEEClient",
+    "SentinelClient",
+    "GEEClient",  # Deprecated alias for SentinelClient
     "NDVITimeSeries",
-    "NDVIProcessor"
+    "NDVIResult",
+    "NDVIProcessor",
+    "get_ndvi"
 ]

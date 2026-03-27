@@ -6,7 +6,7 @@ import numpy as np
 from scipy import stats
 from typing import List, Tuple
 from datetime import datetime
-from .gee_client import NDVITimeSeries
+from .sentinel_client import NDVITimeSeries
 
 
 class NDVIProcessor:

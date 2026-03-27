@@ -16,7 +16,6 @@ from app.clients.base_client import close_http_client
 
 # Import for integration checks
 from app.db import get_db_client
-from app.verification_engine.satellite_layer.gee_client import GEE_AVAILABLE
 import logging
 
 logger = logging.getLogger(__name__)
@@ -84,26 +83,34 @@ async def health_check():
         }
         status = "degraded"
 
-    # Check Google Earth Engine
-    gee_status = "operational" if GEE_AVAILABLE else "unavailable"
-    gee_message = "GEE Python library available" if GEE_AVAILABLE else "GEE library not installed - using mock satellite data"
+    # Check Sentinel Hub (Copernicus Data Space)
+    sentinel_client_id = os.getenv("SENTINEL_CLIENT_ID")
+    sentinel_client_secret = os.getenv("SENTINEL_CLIENT_SECRET")
 
-    # Check if GEE is actually initialized (not just library available)
-    if GEE_AVAILABLE:
+    if sentinel_client_id and sentinel_client_secret:
         try:
-            from app.verification_engine.satellite_layer.gee_client import GEEClient
-            gee_client = GEEClient()
-            if not gee_client.initialized:
-                gee_status = "degraded"
-                gee_message = "GEE library available but not authenticated - using mock satellite data"
+            from app.verification_engine.satellite_layer.sentinel_client import SentinelClient
+            sentinel_client = SentinelClient()
+            if sentinel_client.initialized:
+                integrations["sentinel_hub"] = {
+                    "status": "operational",
+                    "message": "Sentinel Hub API configured with OAuth credentials"
+                }
+            else:
+                integrations["sentinel_hub"] = {
+                    "status": "degraded",
+                    "message": "Sentinel Hub credentials configured but initialization failed"
+                }
         except Exception as e:
-            gee_status = "degraded"
-            gee_message = f"GEE initialization error: {str(e)}"
-
-    integrations["google_earth_engine"] = {
-        "status": gee_status,
-        "message": gee_message
-    }
+            integrations["sentinel_hub"] = {
+                "status": "degraded",
+                "message": f"Sentinel Hub initialization error: {str(e)}"
+            }
+    else:
+        integrations["sentinel_hub"] = {
+            "status": "unavailable",
+            "message": "Sentinel Hub credentials not configured - using deterministic mock satellite data"
+        }
 
     # Registry status
     integrations["verra_registry"] = {
@@ -132,7 +139,7 @@ async def health_check():
         "timestamp": "2026-03-27T00:00:00Z",
         "integrations": integrations,
         "notes": {
-            "gee": "Google Earth Engine requires service account credentials for live satellite data",
+            "satellite": "Sentinel Hub (Copernicus) requires OAuth credentials for live satellite data",
             "registries": "Gold Standard and ACR integrations are placeholder implementations",
             "cache": "System uses intelligent fallback caching when external APIs are unavailable"
         }

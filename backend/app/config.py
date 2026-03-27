@@ -13,11 +13,19 @@ class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
     """
-    
+
     # Supabase
     supabase_url: str = Field(..., env="SUPABASE_URL")
     supabase_service_key: str = Field(..., env="SUPABASE_SERVICE_KEY")
-    
+
+    # Sentinel Hub API (Copernicus Data Space)
+    sentinel_client_id: Optional[str] = Field(default=None, env="SENTINEL_CLIENT_ID")
+    sentinel_client_secret: Optional[str] = Field(default=None, env="SENTINEL_CLIENT_SECRET")
+    sentinel_api_url: str = Field(
+        default="https://sh.dataspace.copernicus.eu/api/v1/process",
+        env="SENTINEL_API_URL"
+    )
+
     # API
     api_title: str = "CarbonCheck API"
     api_version: str = "1.0.0"

@@ -16,9 +16,10 @@ pdfplumber==0.10.3
 beautifulsoup4==4.12.3
 lxml==5.1.0
 
-# NEW: Satellite Layer
-earthengine-api==0.1.384
+# NEW: Satellite Layer (Sentinel Hub API)
+# earthengine-api removed - replaced with Sentinel Hub
 rasterio==1.3.9
+tifffile==2024.2.12
 geopandas==0.14.2
 shapely==2.0.2
 
