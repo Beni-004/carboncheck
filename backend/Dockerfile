@@ -1,9 +1,15 @@
-FROM python:3.11-slim
+# Multi-stage build for optimized backend image
+# Target size: < 500 MB (production runtime only)
 
-WORKDIR /app
+# ============================================
+# Stage 1: Builder - Install dependencies
+# ============================================
+FROM python:3.12-slim AS builder
 
-# Install system dependencies for geospatial libraries
-RUN apt-get update && apt-get install -y \
+WORKDIR /build
+
+# Install system dependencies for geospatial libraries (GDAL, GEOS, PROJ)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     gdal-bin \
@@ -12,17 +18,50 @@ RUN apt-get update && apt-get install -y \
     libproj-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set GDAL environment variables
-ENV GDAL_CONFIG=/usr/bin/gdal-config
-ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
-ENV C_INCLUDE_PATH=/usr/include/gdal
+# Set GDAL environment variables for compilation
+ENV GDAL_CONFIG=/usr/bin/gdal-config \
+    CPLUS_INCLUDE_PATH=/usr/include/gdal \
+    C_INCLUDE_PATH=/usr/include/gdal
 
-# Install dependencies
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy only requirements first (for layer caching)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Install Python dependencies in the virtual environment
+# --no-cache-dir prevents pip from caching, reducing image size
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# ============================================
+# Stage 2: Runtime - Minimal production image
+# ============================================
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install ONLY runtime libraries for geospatial support (no compilers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin \
+    libgdal34 \
+    libgeos-c1v5 \
+    libproj25 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set GDAL environment variables for runtime
+ENV GDAL_CONFIG=/usr/bin/gdal-config \
+    CPLUS_INCLUDE_PATH=/usr/include/gdal \
+    C_INCLUDE_PATH=/usr/include/gdal \
+    PATH="/opt/venv/bin:$PATH"
+
+# Copy virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy ONLY application code (no tests, logs, cache, or venv)
+COPY app/ ./app/
+COPY *.py ./
 
 # Expose port (Railway will override with $PORT)
 EXPOSE 8000

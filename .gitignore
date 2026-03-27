@@ -1,8 +1,11 @@
+# ============================================
 # Python
+# ============================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyo
 .Python
 build/
 develop-eggs/
@@ -19,68 +22,148 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Virtual environments (CRITICAL - prevents multi-GB bloat)
 venv/
 ENV/
 env/
-.venv
+.venv/
+.virtualenv/
+*.venv
 
-# Node
+# ============================================
+# Node.js
+# ============================================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
+
+# ============================================
+# Next.js
+# ============================================
 .next/
 out/
 build/
+.turbo/
+*.tsbuildinfo
 
+# ============================================
 # Environment variables
+# ============================================
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 *.env
+!.env.example
 
-# IDE
+# ============================================
+# IDE and editors
+# ============================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-project
+*.sublime-workspace
 
-# OS
+# ============================================
+# OS files
+# ============================================
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Testing
+# ============================================
+# Testing and coverage
+# ============================================
 .coverage
 htmlcov/
 .pytest_cache/
 .tox/
+.nox/
+coverage/
+*.cover
+.nyc_output/
 
-# Logs
+# ============================================
+# Logs and databases
+# ============================================
 *.log
 logs/
+*.db
+*.sqlite
+*.sqlite3
 
+# ============================================
 # Aider
+# ============================================
 .aider*
 
-# Cache
+# ============================================
+# Cache and temporary files
+# ============================================
 .cache/
 *.cache
-
-# Temporary files
 *.tmp
 temp/
 tmp/
 
+# ============================================
 # Worktrees
+# ============================================
 worktrees/
 
-# Repomix output
+# ============================================
+# Repomix
+# ============================================
 repomix-output.xml
 
+# ============================================
 # Supabase
+# ============================================
 .supabase/
-assistant-488005-*.json
+assistant-*.json
+
+# ============================================
+# Docker
+# ============================================
+*.tar
+*.tar.gz
+
+# ============================================
+# Build artifacts and downloads
+# ============================================
+*.zip
+*.rar
+*.7z
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# ============================================
+# Large data files (add specific patterns)
+# ============================================
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.parquet
+*.feather
+*.csv.gz
+*.json.gz
+
+# ============================================
+# Git LFS (if using large files)
+# ============================================
+# Uncomment if using git-lfs
+# *.psd
+# *.ai
+# *.mp4
+# *.mov

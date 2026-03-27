@@ -1,64 +1,94 @@
-# Python
+# Python cache and compiled files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyo
 .Python
 *.egg-info/
 dist/
 build/
 .eggs/
 
-# Virtual environments
+# Virtual environments (CRITICAL - prevents bloat)
 venv/
 env/
 ENV/
-.venv
+.venv/
+.virtualenv/
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
+*.env
+.env.example
 
-# IDE
+# IDE and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.DS_Store
 
-# Logs
+# Logs and databases
 *.log
-
-# Database
+*.log.*
 *.db
 *.sqlite
+*.sqlite3
 
-# Testing
+# Testing and coverage
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+.tox/
+.nox/
+coverage/
+*.cover
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
-.gitignore
-.gitattributes
-
-# Documentation
+# Development and documentation
 README.md
+README*.md
 *.md
-
-# Development files
+docs/
 test_*.py
 *_test.py
 tests/
 migrations/
 
-# Temporary files
+# Temporary and cache files
 tmp/
 temp/
 *.tmp
+*.bak
+*.swp
+.cache/
+*.cache
+
+# Git and version control
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.gitlab-ci.yml
+Jenkinsfile
+azure-pipelines.yml
+
+# Build artifacts
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# OS files
+Thumbs.db
+desktop.ini

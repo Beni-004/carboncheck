@@ -119,6 +119,7 @@ apps/
     README.md
     tailwind.config.ts
     tsconfig.json
+    vercel.json
 backend/
   app/
     clients/
@@ -162,11 +163,14 @@ backend/
   supabase_local/
     migrations/
       20260324_001_init_carboncheck.sql
+  .dockerignore
   .env.example
   .gitkeep
   apply_migration.py
   create_cache_tables.py
+  Dockerfile
   migration_cache_tables.sql
+  README.md
   requirements.txt
   run_migration.py
   setup_database.py
@@ -206,8 +210,10 @@ integration-layer/
   migrations/
     001_mrv_extension.sql
     002_mrv_indexes.sql
+  .dockerignore
   .env.example
   Dockerfile
+  README.md
   requirements.txt
 pitch/
   .gitkeep
@@ -232,10 +238,12 @@ registry-service/
       programme.service.ts
     app.module.ts
     main.ts
+  .dockerignore
   .env.example
   Dockerfile
   nest-cli.json
   package.json
+  README.md
   tsconfig.json
 specs/
   001-carboncheck-trust-journeys/
@@ -253,6 +261,7 @@ specs/
 apply_migration.py
 CHANGELOG_MOCK_DATA_REMOVAL.md
 check_migration.py
+DEPLOYMENT.md
 docker-compose.registry.yml
 IMPLEMENTATION_PROGRESS.md
 IMPLEMENTATION_STARTER_KIT.md
@@ -6217,18 +6226,6 @@ export function VerdictBadge({ verdict, size = "md" }: VerdictBadgeProps) {
 }
 </file>
 
-<file path="apps/web/.env.example">
-# Frontend Environment Variables
-# Copy this to .env.local and update with your backend URL
-
-# Backend API URL (Required - without this, the frontend will use mock data)
-# For local development:
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# For production, replace with your deployed backend URL:
-# NEXT_PUBLIC_API_URL=https://your-api.railway.app
-</file>
-
 <file path="apps/web/.gitignore">
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
@@ -6318,150 +6315,6 @@ module.exports = {
 Create `apps/web/.env.local`:
 </file>
 
-<file path="apps/web/README.md">
-# CarbonCheck Frontend
-
-Next.js 14 frontend application for carbon credit verification and fraud detection.
-
-## Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Icons**: Lucide React
-- **Language**: TypeScript
-
-## Getting Started
-
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the application.
-
-## Features
-
-### User Story 1: Single Credit Verification
-- `/verify` - Verify individual carbon credits
-- Real-time trust score calculation with 4-check breakdown
-- Color-coded verdict badges (PASS/WARNING/FAIL)
-- Data provenance and fallback indicators
-
-### User Story 2: Bulk Credit Audit
-- `/verify/bulk` - Upload and verify up to 50 credits at once
-- Ranked fraud report (worst credits first)
-- CSV export functionality
-- Per-item error handling
-
-### User Story 3: Public Leaderboard
-- `/leaderboard` - Public "Hall of Shame" for most-flagged credits
-- Category filtering (Renewable Energy, Forestry, etc.)
-- No login required
-- Real-time flag count updates
-
-## Environment Variables
-
-```bash
-# Optional: Backend API URL
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# If not set, the app uses mock data automatically
-```
-
-## Project Structure
-
-```
-apps/web/
-├── app/
-│   ├── layout.tsx          # Root layout with NavBar
-│   ├── page.tsx            # Landing page
-│   ├── verify/
-│   │   ├── page.tsx        # Single verify
-│   │   └── bulk/
-│   │       └── page.tsx    # Bulk verify
-│   └── leaderboard/
-│       └── page.tsx        # Public leaderboard
-├── components/
-│   ├── ui/                 # shadcn/ui primitives
-│   ├── trust-score-card.tsx
-│   ├── trust-score-ring.tsx
-│   ├── verdict-badge.tsx
-│   ├── fraud-risk-list.tsx
-│   ├── provenance-badges.tsx
-│   ├── bulk-fraud-report-table.tsx
-│   ├── leaderboard-table.tsx
-│   └── nav-bar.tsx
-└── lib/
-    ├── api.ts              # API client with fallback
-    ├── mock.ts             # Mock data generator
-    └── utils.ts            # Utility functions
-```
-
-## Mock Data
-
-The application works 100% offline with mock data. Three predefined examples:
-
-- `VCS-2024-001` - PASS (score: 92)
-- `GOLD-2023-556` - WARNING (score: 58)
-- `ACR-2021-999` - FAIL (score: 15)
-
-Any other ID generates random realistic data.
-
-## Design System
-
-### Trust Score Ring
-- **Red (0-40)**: FAIL - High fraud risk
-- **Amber (41-70)**: WARNING - Medium risk
-- **Green (71-100)**: PASS - Low risk
-
-### Verdict Badges
-- Uppercase styling (FAIL/WARNING/PASS)
-- Color-coded backgrounds with borders
-- Consistent sizing (sm/md/lg)
-
-### Dark Mode
-Default dark theme optimized for B2B compliance tools.
-
-## API Integration
-
-When `NEXT_PUBLIC_API_URL` is set, the frontend automatically:
-1. Attempts to call the backend API
-2. Falls back to mock data on timeout/error
-3. Displays data provenance badges
-
-All API calls have automatic fallback - the demo never breaks.
-
-## Development
-
-### Adding New Components
-
-```bash
-# Install shadcn components
-npx shadcn-ui@latest add [component-name]
-```
-
-### Type Safety
-
-All API responses use TypeScript interfaces defined in `lib/mock.ts`:
-- `TrustScoreResult`
-- `BulkVerifyResult`
-- `LeaderboardEntry`
-
-## License
-
-MIT
-</file>
-
 <file path="apps/web/tailwind.config.ts">
 import type { Config } from "tailwindcss";
 
@@ -6548,6 +6401,34 @@ export default config;
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
+}
+</file>
+
+<file path="apps/web/vercel.json">
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@next_public_api_url",
+    "NEXT_PUBLIC_INTEGRATION_API_URL": "@next_public_integration_api_url",
+    "NEXT_PUBLIC_REGISTRY_API_URL": "@next_public_registry_api_url"
+  }
 }
 </file>
 
@@ -8337,6 +8218,74 @@ CarbonCheck Verification Engine
 __version__ = "1.0.0"
 </file>
 
+<file path="backend/.dockerignore">
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+backend.log
+
+# Database
+*.db
+*.sqlite
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Development files
+test_*.py
+*_test.py
+tests/
+supabase_local/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+</file>
+
 <file path="backend/.gitkeep">
 
 </file>
@@ -8484,6 +8433,45 @@ if __name__ == "__main__":
     print("\nSQL also saved to: migration_cache_tables.sql")
 </file>
 
+<file path="backend/Dockerfile">
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies for geospatial libraries
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    gdal-bin \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set GDAL environment variables
+ENV GDAL_CONFIG=/usr/bin/gdal-config
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
+ENV C_INCLUDE_PATH=/usr/include/gdal
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose port (Railway will override with $PORT)
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://localhost:${PORT:-8000}/health')" || exit 1
+
+# Start the application
+# Railway provides $PORT, default to 8000 for local development
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+</file>
+
 <file path="backend/migration_cache_tables.sql">
 -- CarbonCheck Cache Tables Migration
 -- Run this SQL in your Supabase SQL Editor
@@ -8547,6 +8535,331 @@ CREATE INDEX IF NOT EXISTS idx_leaderboard_cache_category
 -- Add comment
 COMMENT ON TABLE leaderboard_cache IS
     'Pre-computed leaderboard rankings for fast public access';
+</file>
+
+<file path="backend/README.md">
+# CarbonCheck Backend API
+
+FastAPI backend service for carbon credit verification and trust scoring.
+
+## Features
+
+- **Credit Verification**: Individual carbon credit verification with trust scoring
+- **Bulk Audit**: Batch verification for up to 50 credits
+- **Public Leaderboard**: Hall of shame for flagged credits
+- **Health Checks**: Comprehensive health endpoint with integration status
+- **Automated Fallback**: Intelligent caching when external APIs are unavailable
+
+## Tech Stack
+
+- **Framework**: FastAPI 0.109+
+- **Server**: Uvicorn with standard extras
+- **Database**: Supabase (PostgreSQL)
+- **Satellite Data**: Sentinel Hub (Copernicus Data Space)
+- **AI/ML**: PyTorch, scikit-learn, XGBoost
+- **Geospatial**: GeoPandas, Rasterio, Shapely
+
+## Getting Started
+
+### Local Development
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run the server
+uvicorn app.main:app --reload --port 8000
+```
+
+Visit http://localhost:8000/docs for interactive API documentation.
+
+### Environment Variables
+
+See `.env.example` for all available configuration options.
+
+**Required:**
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_SERVICE_KEY`: Service role key for database access
+
+**Optional:**
+- `SENTINEL_CLIENT_ID`: Sentinel Hub OAuth client ID
+- `SENTINEL_CLIENT_SECRET`: Sentinel Hub OAuth secret
+- `FRONTEND_URL`: Frontend URL for CORS configuration
+
+## API Endpoints
+
+### Core Endpoints
+- `GET /` - API information
+- `GET /health` - Health check with integration status
+- `GET /docs` - Interactive API documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation (ReDoc)
+
+### Verification
+- `POST /api/verify` - Verify single carbon credit
+- `POST /api/verify/bulk` - Bulk verify up to 50 credits
+
+### Leaderboard
+- `GET /api/leaderboard` - Get public leaderboard of flagged credits
+
+## Production Deployment (Railway)
+
+### Prerequisites
+1. A Railway account ([railway.app](https://railway.app))
+2. A Supabase project ([supabase.com](https://supabase.com))
+3. (Optional) Sentinel Hub account for satellite data
+
+### Deployment Steps
+
+#### 1. Create Railway Project
+```bash
+# Option A: Deploy via Railway Dashboard
+# - Go to railway.app/new
+# - Select "Deploy from GitHub repo"
+# - Choose your repository
+
+# Option B: Deploy via Railway CLI
+railway login
+railway init
+railway up
+```
+
+#### 2. Configure Root Directory
+In Railway project settings:
+- **Root Directory**: `backend`
+- **Build Command**: (leave empty - Docker will handle it)
+- **Start Command**: (leave empty - Dockerfile CMD will be used)
+
+#### 3. Set Environment Variables
+In Railway Dashboard → Variables tab:
+
+**Required:**
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key
+ENVIRONMENT=production
+DEBUG=false
+```
+
+**Optional but Recommended:**
+```bash
+FRONTEND_URL=https://your-app.vercel.app
+SENTINEL_CLIENT_ID=your-sentinel-client-id
+SENTINEL_CLIENT_SECRET=your-sentinel-client-secret
+LOG_LEVEL=WARNING
+```
+
+**Important Notes:**
+- Railway automatically sets `PORT` - do not override it
+- Never commit secrets to the repository
+- Use Railway's secret management for sensitive values
+- Set `ENVIRONMENT=production` to disable verbose logging
+
+#### 4. Database Setup
+The backend uses Supabase for data storage:
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Run database migrations (if any):
+   ```bash
+   python apply_migration.py  # Run locally or via Railway shell
+   ```
+3. Copy the service role key (Settings → API → service_role key)
+4. Add `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` to Railway
+
+#### 5. Deploy
+```bash
+# Automatic deployment via Git push
+git push origin main
+
+# Or trigger manual deployment
+railway up
+
+# Or redeploy from Railway dashboard
+# → Deployments tab → Deploy
+```
+
+### Post-Deployment Verification
+
+#### 1. Check Health Endpoint
+```bash
+curl https://your-backend.railway.app/health
+```
+
+Expected response:
+```json
+{
+  "status": "healthy",
+  "integrations": {
+    "database": {"status": "operational"},
+    "sentinel_hub": {"status": "operational" or "unavailable"},
+    "verra_registry": {"status": "operational"}
+  }
+}
+```
+
+#### 2. Test Verification Endpoint
+```bash
+curl -X POST https://your-backend.railway.app/api/verify \
+  -H "Content-Type: application/json" \
+  -d '{"credit_id": "VCS-2024-001"}'
+```
+
+#### 3. Check Logs
+```bash
+# Via Railway CLI
+railway logs
+
+# Or view in Railway Dashboard → Deployments tab
+```
+
+### Monitoring and Troubleshooting
+
+#### Common Issues
+
+**Issue: Build fails with "Module not found"**
+- Check that `requirements.txt` includes all dependencies
+- Verify Python version compatibility (requires 3.11+)
+- Check Railway build logs for specific error
+
+**Issue: Database connection fails**
+- Verify `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are set correctly
+- Check Supabase project status
+- Ensure service role key has necessary permissions
+
+**Issue: Satellite data unavailable**
+- This is expected if `SENTINEL_CLIENT_ID` is not set
+- The system will use deterministic mock satellite data as fallback
+- Health endpoint will show `sentinel_hub.status: "unavailable"`
+
+**Issue: CORS errors from frontend**
+- Set `FRONTEND_URL` environment variable to your Vercel URL
+- Include both production and preview URLs if needed
+- Check that frontend is using correct backend URL
+
+#### Performance Optimization
+
+- **Caching**: System automatically caches registry and satellite data
+- **Timeouts**: Configure `EXTERNAL_API_TIMEOUT` for API resilience
+- **Batch Limits**: Adjust `BULK_VERIFY_MAX_IDS` based on performance
+- **Database**: Ensure Supabase indexes are set up for fast queries
+
+#### Monitoring
+- Use Railway's built-in metrics dashboard
+- Monitor `/health` endpoint for integration status
+- Set up uptime monitoring (UptimeRobot, Pingdom, etc.)
+- Review Railway logs for errors and warnings
+
+### Scaling
+Railway automatically handles:
+- Horizontal scaling (multiple replicas)
+- Load balancing
+- Zero-downtime deployments
+- Automatic HTTPS certificates
+
+For high-traffic scenarios:
+1. Enable Railway's autoscaling
+2. Upgrade to a larger plan
+3. Optimize database queries
+4. Consider adding Redis for caching
+
+### Cost Optimization
+- Use `LOG_LEVEL=WARNING` in production to reduce log volume
+- Set appropriate `EXTERNAL_API_TIMEOUT` to avoid hanging requests
+- Monitor Railway usage dashboard
+- Consider using Supabase connection pooling
+
+## Development
+
+### Project Structure
+```
+backend/
+├── app/
+│   ├── main.py              # FastAPI application
+│   ├── db.py                # Database client
+│   ├── routers/             # API endpoints
+│   │   ├── verify.py        # Verification endpoints
+│   │   └── leaderboard.py   # Leaderboard endpoints
+│   ├── services/            # Business logic
+│   ├── clients/             # External API clients
+│   ├── middleware/          # Custom middleware
+│   └── verification_engine/ # Core verification logic
+├── requirements.txt         # Python dependencies
+├── Dockerfile              # Production container
+└── .dockerignore           # Docker build exclusions
+```
+
+### Running Tests
+```bash
+pytest
+pytest --cov=app tests/  # With coverage
+```
+
+### Local Docker Build
+```bash
+# Build image
+docker build -t carboncheck-backend .
+
+# Run container
+docker run -p 8000:8000 \
+  -e SUPABASE_URL=your-url \
+  -e SUPABASE_SERVICE_KEY=your-key \
+  carboncheck-backend
+```
+
+## API Documentation
+
+### Verify Single Credit
+```bash
+POST /api/verify
+Content-Type: application/json
+
+{
+  "credit_id": "VCS-2024-001"
+}
+```
+
+Response:
+```json
+{
+  "credit_id": "VCS-2024-001",
+  "trust_score": 92,
+  "verdict": "PASS",
+  "checks": {
+    "registry_verified": true,
+    "satellite_match": true,
+    "ai_prediction_valid": true,
+    "anomaly_score_low": true
+  },
+  "fraud_risks": [],
+  "data_sources": ["Verra Registry", "Sentinel Hub", "AI Model"]
+}
+```
+
+### Bulk Verify
+```bash
+POST /api/verify/bulk
+Content-Type: application/json
+
+{
+  "credit_ids": ["VCS-2024-001", "GOLD-2023-556", "ACR-2021-999"]
+}
+```
+
+### Leaderboard
+```bash
+GET /api/leaderboard?category=Renewable%20Energy&limit=10
+```
+
+## License
+
+MIT
 </file>
 
 <file path="backend/run_migration.py">
@@ -13186,43 +13499,351 @@ GROUP BY DATE_TRUNC('day', verification_timestamp)
 ORDER BY date DESC;
 </file>
 
-<file path="integration-layer/.env.example">
-# Integration Layer Environment
-# UNDP Registry Service
-REGISTRY_SERVICE_URL=http://localhost:3001
-REGISTRY_TIMEOUT=30
+<file path="integration-layer/.dockerignore">
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
 
-# Supabase (CarbonCheck Database)
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_service_key
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
 
-# Sentinel Hub API (Copernicus Data Space)
-# Replaces Google Earth Engine
-SATELLITE_API_ENABLED=true
-SENTINEL_CLIENT_ID=your_sentinel_client_id
-SENTINEL_CLIENT_SECRET=your_sentinel_client_secret
-SENTINEL_API_URL=https://sh.dataspace.copernicus.eu/api/v1/process
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# Feature Flags
-ENABLE_AUTO_VERIFICATION=false
-ENABLE_REGISTRY_SYNC=true
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Development files
+test_*.py
+*_test.py
+tests/
+migrations/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
 </file>
 
-<file path="integration-layer/Dockerfile">
-FROM python:3.11-slim
+<file path="integration-layer/README.md">
+# CarbonCheck Integration Layer
 
-WORKDIR /app
+FastAPI service that bridges the CarbonCheck verification system with the UNDP National Carbon Registry.
+
+## Features
+
+- **Registry Integration**: Sync and manage carbon projects from UNDP Registry
+- **Verification Pipeline**: Automated trust score calculation for registry projects
+- **Multi-Layer Analysis**: Ground, Satellite, AI, and Scoring layers
+- **Leaderboard Generation**: Project ranking based on verification results
+- **Statistics Dashboard**: Aggregated project and verification statistics
+
+## Tech Stack
+
+- **Framework**: FastAPI
+- **Server**: Uvicorn
+- **Database**: Supabase (via CarbonCheck backend)
+- **Registry**: UNDP National Carbon Registry Service
+- **Satellite Data**: Sentinel Hub (Copernicus Data Space)
+
+## Getting Started
+
+### Local Development
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+pip install -r requirements.txt
 
-# Copy application
-COPY . .
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
 
-EXPOSE 8000
+# Run the server
+uvicorn app.main:app --reload --port 8001
+```
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+Visit http://localhost:8001/docs for interactive API documentation.
+
+### Environment Variables
+
+See `.env.example` for all available configuration options.
+
+**Required:**
+- `REGISTRY_SERVICE_URL`: URL of the UNDP Registry Service
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_SERVICE_KEY`: Service role key for database access
+
+**Optional:**
+- `SENTINEL_CLIENT_ID`: Sentinel Hub OAuth client ID
+- `SENTINEL_CLIENT_SECRET`: Sentinel Hub OAuth secret
+- `SATELLITE_API_ENABLED`: Enable/disable satellite verification (default: true)
+- `ENABLE_AUTO_VERIFICATION`: Auto-verify new projects (default: false)
+- `ENABLE_REGISTRY_SYNC`: Enable registry synchronization (default: true)
+
+## API Endpoints
+
+### Core
+- `GET /` - Service information
+- `GET /health` - Health check
+- `GET /docs` - Interactive API documentation
+
+### Registry Management
+- `GET /api/registry/projects` - List all projects from registry
+- `GET /api/registry/projects/{id}` - Get project details
+- `POST /api/registry/projects/{id}/verify` - Verify specific project
+- `POST /api/registry/verify-all` - Verify all projects
+
+### Analytics
+- `GET /api/registry/leaderboard` - Get project leaderboard
+- `GET /api/registry/statistics` - Get verification statistics
+
+## Production Deployment (Railway)
+
+### Prerequisites
+1. Railway account ([railway.app](https://railway.app))
+2. Deployed Registry Service (see `registry-service/README.md`)
+3. Supabase project
+
+### Deployment Steps
+
+#### 1. Create Railway Service
+```bash
+# Via Railway Dashboard
+# - Go to railway.app/new
+# - Select "Deploy from GitHub repo"
+# - Choose your repository
+
+# Or via Railway CLI
+railway login
+railway init
+railway up
+```
+
+#### 2. Configure Root Directory
+In Railway project settings:
+- **Root Directory**: `integration-layer`
+- **Build Command**: (leave empty - Docker will handle it)
+- **Start Command**: (leave empty - Dockerfile CMD will be used)
+
+#### 3. Set Environment Variables
+In Railway Dashboard → Variables tab:
+
+**Required:**
+```bash
+REGISTRY_SERVICE_URL=https://your-registry.railway.app
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key
+```
+
+**Optional:**
+```bash
+SENTINEL_CLIENT_ID=your-sentinel-client-id
+SENTINEL_CLIENT_SECRET=your-sentinel-client-secret
+SATELLITE_API_ENABLED=true
+ENABLE_AUTO_VERIFICATION=false
+ENABLE_REGISTRY_SYNC=true
+REGISTRY_TIMEOUT=30
+```
+
+**Important Notes:**
+- Railway automatically sets `PORT` - do not override it
+- Deploy Registry Service before Integration Layer
+- Ensure Registry Service URL is accessible
+- Never commit secrets to the repository
+
+#### 4. Deploy
+```bash
+# Automatic deployment via Git push
+git push origin main
+
+# Or via Railway CLI
+railway up
+
+# Or redeploy from Railway dashboard
+```
+
+### Post-Deployment Verification
+
+#### 1. Check Health
+```bash
+curl https://your-integration-layer.railway.app/health
+```
+
+#### 2. List Projects
+```bash
+curl https://your-integration-layer.railway.app/api/registry/projects
+```
+
+#### 3. Verify a Project
+```bash
+curl -X POST https://your-integration-layer.railway.app/api/registry/projects/1/verify
+```
+
+#### 4. Check Logs
+```bash
+railway logs
+```
+
+### Troubleshooting
+
+**Issue: Cannot connect to Registry Service**
+- Verify `REGISTRY_SERVICE_URL` is correct
+- Ensure Registry Service is deployed and running
+- Check Registry Service logs for errors
+- Test Registry Service health endpoint directly
+
+**Issue: Database connection fails**
+- Verify `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`
+- Check Supabase project status
+- Ensure service role key has necessary permissions
+
+**Issue: Satellite verification unavailable**
+- This is expected if Sentinel Hub credentials are not set
+- System will use mock satellite data as fallback
+- Set `SENTINEL_CLIENT_ID` and `SENTINEL_CLIENT_SECRET` for live data
+
+**Issue: Verification returns errors**
+- Check that all dependent services are running
+- Verify environment variables are set correctly
+- Review logs for specific error messages
+- Test each layer independently
+
+### Monitoring
+- Monitor `/health` endpoint
+- Use Railway's metrics dashboard
+- Set up alerts for service failures
+- Review logs regularly for errors
+
+## Architecture
+
+### Verification Pipeline
+1. **Ground Layer**: Fetch project data from Registry Service
+2. **Satellite Layer**: Analyze NDVI via Sentinel Hub
+3. **AI Layer**: CO2 prediction and anomaly detection
+4. **Scoring Layer**: Calculate trust score (0-100)
+
+### Data Flow
+```
+Registry Service → Integration Layer → CarbonCheck Backend → Supabase
+                          ↓
+                   Sentinel Hub API
+                          ↓
+                    AI/ML Processing
+```
+
+## Development
+
+### Project Structure
+```
+integration-layer/
+├── app/
+│   ├── main.py              # FastAPI application
+│   ├── routers/
+│   │   └── registry_router.py  # Registry endpoints
+│   ├── services/            # Business logic
+│   └── clients/             # External API clients
+├── requirements.txt         # Python dependencies
+├── Dockerfile              # Production container
+└── .dockerignore           # Docker build exclusions
+```
+
+### Running Tests
+```bash
+pytest
+```
+
+### Local Docker Build
+```bash
+docker build -t carboncheck-integration .
+docker run -p 8001:8000 \
+  -e REGISTRY_SERVICE_URL=http://host.docker.internal:3001 \
+  -e SUPABASE_URL=your-url \
+  -e SUPABASE_SERVICE_KEY=your-key \
+  carboncheck-integration
+```
+
+## API Documentation
+
+### Verify Project
+```bash
+POST /api/registry/projects/{project_id}/verify
+```
+
+Response:
+```json
+{
+  "project_id": "PRJ-001",
+  "project_name": "Solar Power Plant",
+  "trust_score": 87,
+  "verdict": "PASS",
+  "verification_layers": {
+    "ground": {"status": "verified", "data_complete": true},
+    "satellite": {"status": "verified", "ndvi_match": true},
+    "ai": {"status": "verified", "prediction_valid": true},
+    "scoring": {"final_score": 87, "checks_passed": 4}
+  },
+  "verified_at": "2026-03-28T00:00:00Z"
+}
+```
+
+### Get Leaderboard
+```bash
+GET /api/registry/leaderboard?category=Renewable%20Energy&limit=10
+```
+
+### Get Statistics
+```bash
+GET /api/registry/statistics
+```
+
+## License
+
+MIT
 </file>
 
 <file path="integration-layer/requirements.txt">
@@ -13241,26 +13862,6 @@ numpy>=1.26.0
 
 <file path="pitch/.gitkeep">
 
-</file>
-
-<file path="registry-service/src/config/configuration.ts">
-export default () => ({
-  port: parseInt(process.env.REGISTRY_PORT, 10) || 3001,
-  database: {
-    type: 'postgres',
-    host: process.env.REGISTRY_DB_HOST || 'localhost',
-    port: parseInt(process.env.REGISTRY_DB_PORT, 10) || 5432,
-    username: process.env.REGISTRY_DB_USER || 'postgres',
-    password: process.env.REGISTRY_DB_PASSWORD || '',
-    database: process.env.REGISTRY_DB_NAME || 'carbon_registry',
-    synchronize: process.env.NODE_ENV !== 'production',
-    autoLoadEntities: true,
-    logging: process.env.NODE_ENV !== 'production' ? ['error', 'query'] : ['error'],
-  },
-  systemCountry: process.env.SYSTEM_COUNTRY || 'NG',
-  systemCountryName: process.env.SYSTEM_COUNTRY_NAME || 'Nigeria',
-  defaultCreditUnit: process.env.DEFAULT_CREDIT_UNIT || 'tCO2e',
-});
 </file>
 
 <file path="registry-service/src/controllers/programme.controller.ts">
@@ -14455,38 +15056,67 @@ async function bootstrap() {
 bootstrap();
 </file>
 
-<file path="registry-service/.env.example">
-# Registry Service Environment
-REGISTRY_PORT=3001
+<file path="registry-service/.dockerignore">
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Database
-REGISTRY_DB_HOST=localhost
-REGISTRY_DB_PORT=5432
-REGISTRY_DB_USER=postgres
-REGISTRY_DB_PASSWORD=your_password_here
-REGISTRY_DB_NAME=carbon_registry
+# Build output
+dist/
+build/
 
-# System Configuration
-NODE_ENV=development
-SYSTEM_COUNTRY=NG
-SYSTEM_COUNTRY_NAME=Nigeria
-DEFAULT_CREDIT_UNIT=tCO2e
-</file>
+# Environment files
+.env
+.env.local
+.env.*.local
 
-<file path="registry-service/Dockerfile">
-FROM node:18-alpine
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-WORKDIR /app
+# Logs
+logs/
+*.log
 
-COPY package*.json ./
-RUN npm ci --only=production
+# Testing
+coverage/
+.nyc_output/
 
-COPY . .
-RUN npm run build
+# OS
+.DS_Store
+Thumbs.db
 
-EXPOSE 3001
+# Git
+.git/
+.gitignore
+.gitattributes
 
-CMD ["npm", "run", "start:prod"]
+# Documentation
+README.md
+*.md
+
+# Development files
+src/**/*.spec.ts
+src/**/*.test.ts
+test/
+tests/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Misc
+.eslintrc.js
+.prettierrc
+tsconfig.build.json
 </file>
 
 <file path="registry-service/nest-cli.json">
@@ -14545,6 +15175,387 @@ CMD ["npm", "run", "start:prod"]
     "typescript": "^5.1.3"
   }
 }
+</file>
+
+<file path="registry-service/README.md">
+# UNDP National Carbon Registry Service
+
+NestJS service for managing the national carbon registry with PostgreSQL database.
+
+## Features
+
+- **Programme Management**: CRUD operations for carbon reduction programmes
+- **Credit Tracking**: Issuance, transfer, and retirement of carbon credits
+- **Transaction History**: Complete audit trail of all credit movements
+- **RESTful API**: Comprehensive API for registry operations
+- **Type-Safe**: Full TypeScript with validation
+- **Database ORM**: TypeORM for PostgreSQL
+
+## Tech Stack
+
+- **Framework**: NestJS
+- **Database**: PostgreSQL with TypeORM
+- **Validation**: class-validator
+- **Language**: TypeScript
+- **Runtime**: Node.js 18+
+
+## Getting Started
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database configuration
+
+# Run database migrations
+npm run migration:run
+
+# Start development server
+npm run start:dev
+```
+
+Visit http://localhost:3001/api/v1/programmes for the API.
+
+### Environment Variables
+
+See `.env.example` for all available configuration options.
+
+**Required:**
+- `REGISTRY_DB_HOST`: PostgreSQL host
+- `REGISTRY_DB_PORT`: PostgreSQL port (default: 5432)
+- `REGISTRY_DB_USER`: Database user
+- `REGISTRY_DB_PASSWORD`: Database password
+- `REGISTRY_DB_NAME`: Database name
+
+**Optional:**
+- `REGISTRY_PORT`: Server port (default: 3001)
+- `NODE_ENV`: Environment (development/production)
+- `SYSTEM_COUNTRY`: Country code (default: NG)
+- `SYSTEM_COUNTRY_NAME`: Country name (default: Nigeria)
+- `DEFAULT_CREDIT_UNIT`: Credit unit (default: tCO2e)
+
+## API Endpoints
+
+### Programmes
+- `GET /api/v1/programmes` - List all programmes
+- `GET /api/v1/programmes/:id` - Get programme details
+- `POST /api/v1/programmes` - Create new programme
+- `PATCH /api/v1/programmes/:id` - Update programme
+- `DELETE /api/v1/programmes/:id` - Delete programme
+
+### Credits
+- `GET /api/v1/credits` - List all credits
+- `GET /api/v1/credits/:id` - Get credit details
+- `POST /api/v1/credits/issue` - Issue new credits
+- `POST /api/v1/credits/transfer` - Transfer credits
+- `POST /api/v1/credits/retire` - Retire credits
+
+### Transactions
+- `GET /api/v1/transactions` - List all transactions
+- `GET /api/v1/transactions/:id` - Get transaction details
+
+## Production Deployment (Railway)
+
+### Prerequisites
+1. Railway account ([railway.app](https://railway.app))
+2. Railway PostgreSQL database (or external PostgreSQL)
+
+### Deployment Steps
+
+#### 1. Create Railway Project
+```bash
+# Via Railway Dashboard
+# - Go to railway.app/new
+# - Select "Deploy from GitHub repo"
+# - Choose your repository
+
+# Or via Railway CLI
+railway login
+railway init
+railway up
+```
+
+#### 2. Add PostgreSQL Database
+```bash
+# Via Railway Dashboard
+# - In your project, click "New"
+# - Select "Database" → "Add PostgreSQL"
+
+# Or via Railway CLI
+railway add --database postgresql
+```
+
+#### 3. Configure Root Directory
+In Railway project settings:
+- **Root Directory**: `registry-service`
+- **Build Command**: (leave empty - Docker will handle it)
+- **Start Command**: (leave empty - Dockerfile CMD will be used)
+
+#### 4. Set Environment Variables
+In Railway Dashboard → Variables tab:
+
+**If using Railway PostgreSQL (recommended):**
+```bash
+REGISTRY_DB_HOST=${{Postgres.PGHOST}}
+REGISTRY_DB_PORT=${{Postgres.PGPORT}}
+REGISTRY_DB_USER=${{Postgres.PGUSER}}
+REGISTRY_DB_PASSWORD=${{Postgres.PGPASSWORD}}
+REGISTRY_DB_NAME=${{Postgres.PGDATABASE}}
+NODE_ENV=production
+SYSTEM_COUNTRY=NG
+SYSTEM_COUNTRY_NAME=Nigeria
+```
+
+**If using external PostgreSQL:**
+```bash
+REGISTRY_DB_HOST=your-db-host.com
+REGISTRY_DB_PORT=5432
+REGISTRY_DB_USER=your-db-user
+REGISTRY_DB_PASSWORD=your-db-password
+REGISTRY_DB_NAME=carbon_registry
+NODE_ENV=production
+```
+
+**Important Notes:**
+- Railway automatically sets `PORT` - do not override it
+- Use Railway's `${{Postgres.VARIABLE}}` syntax to reference Railway PostgreSQL
+- Database is created automatically by TypeORM on first run (when `synchronize: true`)
+- Set `NODE_ENV=production` to disable auto-synchronization
+- Never commit database credentials to the repository
+
+#### 5. Database Setup
+
+**Option A: Auto-sync (for development)**
+- TypeORM will automatically create tables on first run
+- Enabled when `NODE_ENV != production`
+
+**Option B: Migrations (for production)**
+```bash
+# Generate migration
+npm run migration:generate -- -n InitialSchema
+
+# Run migrations via Railway shell
+railway run npm run migration:run
+```
+
+#### 6. Deploy
+```bash
+# Automatic deployment via Git push
+git push origin main
+
+# Or via Railway CLI
+railway up
+
+# Or redeploy from Railway dashboard
+```
+
+### Post-Deployment Verification
+
+#### 1. Check Service Health
+```bash
+curl https://your-registry.railway.app/api/v1/health
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "info": {
+    "database": {"status": "up"}
+  }
+}
+```
+
+#### 2. List Programmes
+```bash
+curl https://your-registry.railway.app/api/v1/programmes
+```
+
+#### 3. Create Test Programme
+```bash
+curl -X POST https://your-registry.railway.app/api/v1/programmes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Solar Energy Project",
+    "description": "100MW solar farm",
+    "location": "Lagos, Nigeria",
+    "category": "Renewable Energy",
+    "status": "Active"
+  }'
+```
+
+#### 4. Check Logs
+```bash
+# Via Railway CLI
+railway logs
+
+# Or view in Railway Dashboard → Deployments tab
+```
+
+### Troubleshooting
+
+**Issue: Database connection fails**
+- Verify all `REGISTRY_DB_*` variables are set correctly
+- If using Railway PostgreSQL, check that Postgres service is running
+- Verify database credentials are correct
+- Check Railway logs for specific connection errors
+
+**Issue: Tables not created**
+- Ensure `NODE_ENV=development` for auto-sync, OR
+- Run migrations manually: `railway run npm run migration:run`
+- Check that database user has CREATE TABLE permissions
+
+**Issue: Build fails**
+- Verify `package.json` has all required dependencies
+- Check that TypeScript compiles locally: `npm run build`
+- Review Railway build logs for specific errors
+
+**Issue: Port binding error**
+- Do NOT set `PORT` or `REGISTRY_PORT` in Railway
+- Railway automatically sets `PORT` environment variable
+- The app is configured to read `PORT` first, then fall back to `REGISTRY_PORT`
+
+### Monitoring
+- Use Railway's built-in metrics dashboard
+- Monitor database connections and query performance
+- Set up health check monitoring (UptimeRobot, etc.)
+- Review Railway logs for errors and warnings
+
+### Database Backups
+Railway PostgreSQL includes:
+- Automatic daily backups (retained for 7 days)
+- Manual backup creation via dashboard
+- Point-in-time recovery
+
+For critical data:
+1. Set up additional backup automation
+2. Export data regularly via pg_dump
+3. Store backups in external storage (S3, etc.)
+
+## Development
+
+### Project Structure
+```
+registry-service/
+├── src/
+│   ├── main.ts              # Application entry point
+│   ├── app.module.ts        # Root module
+│   ├── config/
+│   │   └── configuration.ts # Configuration loader
+│   ├── programmes/          # Programmes module
+│   │   ├── programme.entity.ts
+│   │   ├── programme.service.ts
+│   │   └── programme.controller.ts
+│   ├── credits/             # Credits module
+│   └── transactions/        # Transactions module
+├── package.json             # Node dependencies
+├── Dockerfile              # Production container
+└── .dockerignore           # Docker build exclusions
+```
+
+### Running Tests
+```bash
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+### Database Migrations
+```bash
+# Generate migration from entities
+npm run migration:generate -- -n MigrationName
+
+# Run migrations
+npm run migration:run
+
+# Revert last migration
+npm run migration:revert
+```
+
+### Local Docker Build
+```bash
+# Build image
+docker build -t registry-service .
+
+# Run container
+docker run -p 3001:3000 \
+  -e REGISTRY_DB_HOST=host.docker.internal \
+  -e REGISTRY_DB_USER=postgres \
+  -e REGISTRY_DB_PASSWORD=password \
+  -e REGISTRY_DB_NAME=carbon_registry \
+  registry-service
+```
+
+## API Documentation
+
+### Create Programme
+```bash
+POST /api/v1/programmes
+Content-Type: application/json
+
+{
+  "name": "Reforestation Project",
+  "description": "Plant 10,000 trees",
+  "location": "Abuja, Nigeria",
+  "category": "Forestry",
+  "status": "Active",
+  "startDate": "2026-01-01",
+  "estimatedCredits": 50000
+}
+```
+
+### Issue Credits
+```bash
+POST /api/v1/credits/issue
+Content-Type: application/json
+
+{
+  "programmeId": 1,
+  "amount": 1000,
+  "vintageYear": 2026,
+  "serialNumberPrefix": "NG-RF-2026"
+}
+```
+
+### Transfer Credits
+```bash
+POST /api/v1/credits/transfer
+Content-Type: application/json
+
+{
+  "creditId": "NG-RF-2026-0001",
+  "fromHolder": "Project Owner",
+  "toHolder": "Buyer Corp",
+  "amount": 100,
+  "reason": "Sale"
+}
+```
+
+### Retire Credits
+```bash
+POST /api/v1/credits/retire
+Content-Type: application/json
+
+{
+  "creditId": "NG-RF-2026-0001",
+  "amount": 50,
+  "reason": "Offset emissions",
+  "retiredBy": "Company ABC"
+}
+```
+
+## License
+
+MIT
 </file>
 
 <file path="registry-service/tsconfig.json">
@@ -14775,95 +15786,6 @@ A journalist opens a public, no-login leaderboard showing the most-flagged credi
 - **SC-007**: During simulated upstream outage, at least 99% of valid single-ID requests still return a score using fallback mode.
 - **SC-008**: Repeated scoring on same input and source snapshot yields identical numeric score and status band in 100% of test runs.
 - **SC-009**: In user testing, at least 80% of participants can correctly identify the top three riskiest credits from the bulk report without assistance.
-</file>
-
-<file path=".gitignore">
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-venv/
-ENV/
-env/
-.venv
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-.next/
-out/
-build/
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
-
-# Logs
-*.log
-logs/
-
-# Aider
-.aider*
-
-# Cache
-.cache/
-*.cache
-
-# Temporary files
-*.tmp
-temp/
-tmp/
-
-# Worktrees
-worktrees/
-
-# Repomix output
-repomix-output.xml
-
-# Supabase
-.supabase/
-assistant-488005-*.json
 </file>
 
 <file path="apply_migration.py">
@@ -15363,6 +16285,646 @@ def check_and_create_tables():
 
 if __name__ == "__main__":
     check_and_create_tables()
+</file>
+
+<file path="DEPLOYMENT.md">
+# CarbonCheck Deployment Guide
+
+Complete deployment guide for the CarbonCheck monorepo with Vercel (frontend) and Railway (backend services).
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Frontend                            │
+│                    apps/web (Vercel)                        │
+│                   https://carboncheck.vercel.app            │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+                  ├──────────────────────────────────┐
+                  ▼                                  ▼
+┌─────────────────────────────┐    ┌─────────────────────────────┐
+│     Backend (Railway)       │    │  Integration Layer          │
+│  Main API - backend/        │◄───┤  integration-layer/         │
+│  Port: 8000                 │    │  Port: 8000                 │
+└────────┬────────────────────┘    └──────────┬──────────────────┘
+         │                                    │
+         │                                    ▼
+         │                         ┌─────────────────────────────┐
+         │                         │  Registry Service           │
+         │                         │  registry-service/          │
+         │                         │  Port: 3000                 │
+         │                         └──────────┬──────────────────┘
+         │                                    │
+         └────────────┬───────────────────────┘
+                      ▼
+         ┌──────────────────────────┐
+         │   Supabase PostgreSQL    │
+         │   (Database)             │
+         └──────────────────────────┘
+```
+
+## Deployment Matrix
+
+| Service | Platform | Root Directory | Port | Database |
+|---------|----------|----------------|------|----------|
+| Frontend | Vercel | `apps/web` | 3000 | None |
+| Backend | Railway | `backend` | $PORT (Railway) | Supabase |
+| Integration Layer | Railway | `integration-layer` | $PORT (Railway) | Supabase |
+| Registry Service | Railway | `registry-service` | $PORT (Railway) | Railway PostgreSQL |
+
+---
+
+## Prerequisites
+
+### Accounts & Services
+- [x] **Vercel Account** for frontend hosting
+- [x] **Railway Account** for backend services
+- [x] **Supabase Account** for main database
+- [x] **GitHub Account** with repository access
+- [ ] **Sentinel Hub Account** (optional - for live satellite data)
+
+### Local Setup (Optional)
+```bash
+# Clone repository
+git clone https://github.com/your-org/carboncheck.git
+cd carboncheck
+
+# Install Vercel CLI
+npm install -g vercel
+
+# Install Railway CLI
+npm install -g @railway/cli
+```
+
+---
+
+## Deployment Order
+
+**IMPORTANT**: Deploy services in this order to ensure proper dependencies:
+
+1. **Database Setup** (Supabase + Railway PostgreSQL)
+2. **Registry Service** (needs database)
+3. **Backend Service** (needs database)
+4. **Integration Layer** (needs Registry Service + Backend)
+5. **Frontend** (needs Backend URL)
+
+---
+
+## 1. Database Setup
+
+### 1.1 Supabase (Main Database)
+
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Note your project URL and service role key:
+   - **URL**: `https://your-project.supabase.co`
+   - **Service Key**: Settings → API → `service_role` key (secret)
+
+3. Run database migrations (optional):
+   ```bash
+   cd backend
+   python apply_migration.py
+   ```
+
+### 1.2 Railway PostgreSQL (Registry Database)
+
+This will be created automatically when deploying the Registry Service.
+
+---
+
+## 2. Registry Service Deployment (Railway)
+
+### 2.1 Create Service
+1. Go to [railway.app](https://railway.app)
+2. Click **"New Project"** → **"Deploy from GitHub repo"**
+3. Select your repository and click **"Deploy"**
+
+### 2.2 Add PostgreSQL Database
+1. In your Railway project, click **"New"** → **"Database"** → **"Add PostgreSQL"**
+2. Railway will automatically create database and set environment variables
+
+### 2.3 Configure Service
+**Settings → Root Directory:**
+```
+registry-service
+```
+
+**Settings → Build & Start:**
+- Build Command: (leave empty)
+- Start Command: (leave empty)
+
+### 2.4 Set Environment Variables
+**Variables tab:**
+```bash
+# Database (automatically set by Railway)
+REGISTRY_DB_HOST=${{Postgres.PGHOST}}
+REGISTRY_DB_PORT=${{Postgres.PGPORT}}
+REGISTRY_DB_USER=${{Postgres.PGUSER}}
+REGISTRY_DB_PASSWORD=${{Postgres.PGPASSWORD}}
+REGISTRY_DB_NAME=${{Postgres.PGDATABASE}}
+
+# Application
+NODE_ENV=production
+SYSTEM_COUNTRY=NG
+SYSTEM_COUNTRY_NAME=Nigeria
+DEFAULT_CREDIT_UNIT=tCO2e
+```
+
+### 2.5 Deploy & Verify
+```bash
+# Check deployment status in Railway dashboard
+# Note the public URL: https://registry-service-production.up.railway.app
+
+# Verify health
+curl https://your-registry-service.railway.app/api/v1/health
+```
+
+**Expected Response:**
+```json
+{"status": "ok", "info": {"database": {"status": "up"}}}
+```
+
+---
+
+## 3. Backend Service Deployment (Railway)
+
+### 3.1 Create New Service
+1. In the same Railway project, click **"New"** → **"GitHub Repo"**
+2. Select the same repository (creates service #2)
+
+### 3.2 Configure Service
+**Settings → Root Directory:**
+```
+backend
+```
+
+### 3.3 Set Environment Variables
+**Variables tab:**
+```bash
+# Supabase (Required)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key
+
+# Environment
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=WARNING
+
+# CORS (set after deploying frontend)
+FRONTEND_URL=https://carboncheck.vercel.app
+
+# Sentinel Hub (Optional - for live satellite data)
+SENTINEL_CLIENT_ID=your-sentinel-client-id
+SENTINEL_CLIENT_SECRET=your-sentinel-client-secret
+SENTINEL_API_URL=https://sh.dataspace.copernicus.eu/api/v1/process
+
+# API Configuration
+EXTERNAL_API_TIMEOUT=15
+BULK_VERIFY_MAX_IDS=50
+```
+
+### 3.4 Deploy & Verify
+```bash
+# Note the public URL: https://backend-production.up.railway.app
+
+# Check health
+curl https://your-backend.railway.app/health
+```
+
+**Expected Response:**
+```json
+{
+  "status": "healthy",
+  "integrations": {
+    "database": {"status": "operational"},
+    "sentinel_hub": {"status": "operational" or "unavailable"},
+    "verra_registry": {"status": "operational"}
+  }
+}
+```
+
+---
+
+## 4. Integration Layer Deployment (Railway)
+
+### 4.1 Create New Service
+1. In the same Railway project, click **"New"** → **"GitHub Repo"**
+2. Select the same repository (creates service #3)
+
+### 4.2 Configure Service
+**Settings → Root Directory:**
+```
+integration-layer
+```
+
+### 4.3 Set Environment Variables
+**Variables tab:**
+```bash
+# Registry Service (from step 2)
+REGISTRY_SERVICE_URL=https://your-registry-service.railway.app
+REGISTRY_TIMEOUT=30
+
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key
+
+# Sentinel Hub (Optional - same as backend)
+SATELLITE_API_ENABLED=true
+SENTINEL_CLIENT_ID=your-sentinel-client-id
+SENTINEL_CLIENT_SECRET=your-sentinel-client-secret
+SENTINEL_API_URL=https://sh.dataspace.copernicus.eu/api/v1/process
+
+# Feature Flags
+ENABLE_AUTO_VERIFICATION=false
+ENABLE_REGISTRY_SYNC=true
+```
+
+### 4.4 Deploy & Verify
+```bash
+# Note the public URL: https://integration-layer-production.up.railway.app
+
+# Check health
+curl https://your-integration-layer.railway.app/health
+```
+
+---
+
+## 5. Frontend Deployment (Vercel)
+
+### 5.1 Import Repository
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import your GitHub repository
+3. Vercel will detect Next.js automatically
+
+### 5.2 Configure Project
+**Settings:**
+- **Framework Preset**: Next.js (auto-detected)
+- **Root Directory**: `apps/web`
+- **Build Command**: `npm run build` (auto-detected)
+- **Install Command**: `npm install` (auto-detected)
+- **Output Directory**: `.next` (auto-detected)
+
+### 5.3 Set Environment Variables
+**Settings → Environment Variables:**
+
+Add for **Production, Preview, and Development**:
+
+```bash
+# Required
+NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+
+# Optional (for full integration)
+NEXT_PUBLIC_INTEGRATION_API_URL=https://your-integration-layer.railway.app
+NEXT_PUBLIC_REGISTRY_API_URL=https://your-registry-service.railway.app
+```
+
+### 5.4 Deploy
+```bash
+# Via Git push (automatic)
+git push origin main
+
+# Or via Vercel CLI
+cd apps/web
+vercel --prod
+```
+
+### 5.5 Verify Deployment
+1. Visit your Vercel URL: `https://carboncheck.vercel.app`
+2. Go to `/verify` page
+3. Enter a test credit ID: `VCS-2024-001`
+4. Check that data comes from "Live API" (not mock)
+
+### 5.6 Update Backend CORS
+After frontend is deployed, update Backend's `FRONTEND_URL`:
+
+**Railway → Backend Service → Variables:**
+```bash
+FRONTEND_URL=https://carboncheck.vercel.app
+```
+
+Redeploy backend for CORS changes to take effect.
+
+---
+
+## Environment Variables Reference
+
+### Frontend (apps/web)
+| Variable | Required | Example | Description |
+|----------|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | ✅ Yes | `https://backend.railway.app` | Main backend API |
+| `NEXT_PUBLIC_INTEGRATION_API_URL` | ⚠️ Optional | `https://integration.railway.app` | Integration layer |
+| `NEXT_PUBLIC_REGISTRY_API_URL` | ⚠️ Optional | `https://registry.railway.app` | Registry service |
+
+### Backend (backend)
+| Variable | Required | Example | Description |
+|----------|----------|---------|-------------|
+| `SUPABASE_URL` | ✅ Yes | `https://proj.supabase.co` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | ✅ Yes | `eyJhb...` | Service role key |
+| `FRONTEND_URL` | ⚠️ Optional | `https://app.vercel.app` | For CORS |
+| `SENTINEL_CLIENT_ID` | ⚠️ Optional | `cdse-client-id` | Sentinel Hub OAuth |
+| `SENTINEL_CLIENT_SECRET` | ⚠️ Optional | `secret...` | Sentinel Hub OAuth |
+| `ENVIRONMENT` | ⚠️ Optional | `production` | Environment mode |
+| `DEBUG` | ⚠️ Optional | `false` | Debug mode |
+| `LOG_LEVEL` | ⚠️ Optional | `WARNING` | Log level |
+
+### Integration Layer (integration-layer)
+| Variable | Required | Example | Description |
+|----------|----------|---------|-------------|
+| `REGISTRY_SERVICE_URL` | ✅ Yes | `https://registry.railway.app` | Registry service URL |
+| `SUPABASE_URL` | ✅ Yes | `https://proj.supabase.co` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | ✅ Yes | `eyJhb...` | Service role key |
+| `SENTINEL_CLIENT_ID` | ⚠️ Optional | `cdse-client-id` | Sentinel Hub OAuth |
+| `SENTINEL_CLIENT_SECRET` | ⚠️ Optional | `secret...` | Sentinel Hub OAuth |
+| `SATELLITE_API_ENABLED` | ⚠️ Optional | `true` | Enable satellite |
+| `ENABLE_AUTO_VERIFICATION` | ⚠️ Optional | `false` | Auto-verify projects |
+| `ENABLE_REGISTRY_SYNC` | ⚠️ Optional | `true` | Sync with registry |
+
+### Registry Service (registry-service)
+| Variable | Required | Example | Description |
+|----------|----------|---------|-------------|
+| `REGISTRY_DB_HOST` | ✅ Yes | `${{Postgres.PGHOST}}` | Database host |
+| `REGISTRY_DB_PORT` | ✅ Yes | `${{Postgres.PGPORT}}` | Database port |
+| `REGISTRY_DB_USER` | ✅ Yes | `${{Postgres.PGUSER}}` | Database user |
+| `REGISTRY_DB_PASSWORD` | ✅ Yes | `${{Postgres.PGPASSWORD}}` | Database password |
+| `REGISTRY_DB_NAME` | ✅ Yes | `${{Postgres.PGDATABASE}}` | Database name |
+| `NODE_ENV` | ⚠️ Optional | `production` | Environment mode |
+| `SYSTEM_COUNTRY` | ⚠️ Optional | `NG` | Country code |
+| `SYSTEM_COUNTRY_NAME` | ⚠️ Optional | `Nigeria` | Country name |
+
+---
+
+## Testing the Full Stack
+
+### 1. Test Registry Service
+```bash
+curl https://your-registry.railway.app/api/v1/programmes
+```
+
+### 2. Test Backend API
+```bash
+curl -X POST https://your-backend.railway.app/api/verify \
+  -H "Content-Type: application/json" \
+  -d '{"credit_id": "VCS-2024-001"}'
+```
+
+### 3. Test Integration Layer
+```bash
+curl https://your-integration-layer.railway.app/api/registry/projects
+```
+
+### 4. Test Frontend
+1. Visit `https://carboncheck.vercel.app`
+2. Navigate to `/verify`
+3. Enter credit ID: `VCS-2024-001`
+4. Verify trust score is calculated
+5. Check data source badge shows "Live API"
+
+---
+
+## Troubleshooting
+
+### Frontend Issues
+
+**Problem**: Frontend shows mock data instead of live API data
+- **Check**: Verify `NEXT_PUBLIC_API_URL` is set in Vercel
+- **Check**: Ensure backend is accessible (test `/health` endpoint)
+- **Check**: Look for CORS errors in browser console
+- **Fix**: Update backend's `FRONTEND_URL` to include Vercel URL
+
+**Problem**: Build fails on Vercel
+- **Check**: Ensure `package.json` has all dependencies
+- **Check**: Verify TypeScript compiles locally: `npm run build`
+- **Check**: Review Vercel build logs for specific errors
+
+### Backend Issues
+
+**Problem**: Database connection fails
+- **Check**: Verify `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are correct
+- **Check**: Test Supabase project is active
+- **Check**: Ensure service role key has necessary permissions
+
+**Problem**: Satellite data unavailable
+- **Expected**: If `SENTINEL_CLIENT_ID` not set, system uses mock data
+- **Check**: Health endpoint shows `sentinel_hub.status: "unavailable"`
+- **Fix**: Register at [dataspace.copernicus.eu](https://dataspace.copernicus.eu/) and add credentials
+
+**Problem**: CORS errors
+- **Check**: `FRONTEND_URL` is set in backend variables
+- **Check**: Frontend URL matches exactly (including https://)
+- **Fix**: Redeploy backend after updating CORS settings
+
+### Integration Layer Issues
+
+**Problem**: Cannot connect to Registry Service
+- **Check**: Verify `REGISTRY_SERVICE_URL` is correct
+- **Check**: Ensure Registry Service is deployed and running
+- **Check**: Test Registry Service health endpoint directly
+
+**Problem**: Verification returns errors
+- **Check**: All dependent services (backend, registry) are running
+- **Check**: Environment variables are set correctly
+- **Fix**: Review logs for specific error messages
+
+### Registry Service Issues
+
+**Problem**: Database connection fails
+- **Check**: All `REGISTRY_DB_*` variables are set
+- **Check**: Railway PostgreSQL service is running
+- **Check**: Database credentials are correct
+
+**Problem**: Tables not created
+- **Fix**: Ensure `NODE_ENV=development` for auto-sync, OR
+- **Fix**: Run migrations: `railway run npm run migration:run`
+
+---
+
+## Monitoring & Maintenance
+
+### Health Checks
+Set up monitoring for these endpoints:
+
+- **Backend**: `https://your-backend.railway.app/health`
+- **Integration**: `https://your-integration-layer.railway.app/health`
+- **Registry**: `https://your-registry.railway.app/api/v1/health`
+- **Frontend**: `https://carboncheck.vercel.app`
+
+### Recommended Tools
+- **Uptime Monitoring**: UptimeRobot, Pingdom, or Better Uptime
+- **Error Tracking**: Sentry (add to each service)
+- **Analytics**: Vercel Analytics (free for frontend)
+
+### Logs Access
+
+**Railway:**
+```bash
+# Via Railway CLI
+railway login
+railway link
+railway logs
+
+# Or view in Railway Dashboard → Deployments → Logs
+```
+
+**Vercel:**
+```bash
+# Via Vercel CLI
+vercel logs [deployment-url]
+
+# Or view in Vercel Dashboard → Deployments → Logs
+```
+
+### Database Backups
+
+**Supabase:**
+- Automatic daily backups (retained for 7 days on free plan)
+- Manual backups: Dashboard → Database → Backups
+
+**Railway PostgreSQL:**
+- Automatic daily backups (retained for 7 days)
+- Manual backups: Railway Dashboard → Database → Backups
+
+---
+
+## Scaling Considerations
+
+### Vercel (Frontend)
+- Automatic edge caching
+- Global CDN distribution
+- Automatic scaling (no configuration needed)
+
+### Railway (Backend Services)
+- **Free Tier**: 500 hours/month, $5 credit
+- **Pro Plan**: Automatic scaling, pay-as-you-go
+- **Horizontal Scaling**: Add replicas in service settings
+- **Vertical Scaling**: Upgrade plan for more resources
+
+### Database
+- **Supabase Free Tier**: 500MB database, 50,000 rows
+- **Upgrade**: As data grows, upgrade to Pro ($25/month)
+- **Railway PostgreSQL**: Scales with Railway plan
+
+---
+
+## Cost Estimates
+
+### Minimal Setup (Development/Demo)
+- **Vercel**: Free (hobby plan)
+- **Railway**: $5-10/month (3 services)
+- **Supabase**: Free tier
+- **Total**: ~$5-10/month
+
+### Production Setup
+- **Vercel**: $20/month (Pro plan)
+- **Railway**: $20-50/month (pro plan, 3 services)
+- **Supabase**: $25/month (Pro plan)
+- **Total**: ~$65-95/month
+
+### High-Traffic Production
+- **Vercel**: Custom pricing
+- **Railway**: $100-300/month (scaled services)
+- **Supabase**: Custom pricing
+- **Total**: $200-500/month
+
+---
+
+## CI/CD Pipeline
+
+### Automatic Deployments
+
+**Vercel (Frontend):**
+- Deploys automatically on push to `main` (production)
+- Preview deployments for all pull requests
+- No configuration needed
+
+**Railway (Backend Services):**
+- Deploys automatically on push to `main`
+- Manual deployments via "Deploy" button
+- Can configure deploy branches in settings
+
+### Manual Deployments
+
+**Railway CLI:**
+```bash
+railway up
+```
+
+**Vercel CLI:**
+```bash
+vercel --prod
+```
+
+---
+
+## Security Checklist
+
+- [x] All secrets stored in platform environment variables (not in code)
+- [x] Supabase service role key kept secret (never exposed to frontend)
+- [x] Database credentials secured in Railway/Supabase
+- [x] CORS configured to allow only known origins
+- [x] HTTPS enforced on all services (automatic on Railway/Vercel)
+- [x] `NODE_ENV=production` set for all production services
+- [x] Database auto-sync disabled in production (`NODE_ENV=production`)
+- [x] No hardcoded URLs in code (all use environment variables)
+
+---
+
+## Support
+
+### Documentation
+- **Frontend**: `apps/web/README.md`
+- **Backend**: `backend/README.md`
+- **Integration Layer**: `integration-layer/README.md`
+- **Registry Service**: `registry-service/README.md`
+
+### Platform Support
+- **Vercel**: [vercel.com/support](https://vercel.com/support)
+- **Railway**: [railway.app/help](https://railway.app/help)
+- **Supabase**: [supabase.com/docs](https://supabase.com/docs)
+
+---
+
+## Quick Reference
+
+### Service URLs (Update after deployment)
+```bash
+# Frontend
+FRONTEND_URL=https://carboncheck.vercel.app
+
+# Backend Services
+BACKEND_URL=https://backend-production.up.railway.app
+INTEGRATION_URL=https://integration-production.up.railway.app
+REGISTRY_URL=https://registry-production.up.railway.app
+
+# Database
+SUPABASE_URL=https://your-project.supabase.co
+```
+
+### Essential Commands
+```bash
+# Railway
+railway login
+railway link
+railway logs
+railway status
+railway up
+
+# Vercel
+vercel login
+vercel link
+vercel logs
+vercel --prod
+
+# Health checks
+curl $BACKEND_URL/health
+curl $INTEGRATION_URL/health
+curl $REGISTRY_URL/api/v1/health
+```
+
+---
+
+**Last Updated**: 2026-03-28
+**Repository**: https://github.com/your-org/carboncheck
+**License**: MIT
 </file>
 
 <file path="docker-compose.registry.yml">
@@ -18222,6 +19784,42 @@ export default function RootLayout({
 }
 </file>
 
+<file path="apps/web/.env.example">
+# Frontend Environment Variables
+# Copy this to .env.local and update with your backend URLs
+
+# ===================================
+# Backend API URLs
+# ===================================
+
+# Main CarbonCheck Backend API (Required)
+# For local development:
+NEXT_PUBLIC_API_URL=http://localhost:8000
+# For production (Railway):
+# NEXT_PUBLIC_API_URL=https://carboncheck-backend.railway.app
+
+# Integration Layer API (Optional - for registry integration)
+# For local development:
+NEXT_PUBLIC_INTEGRATION_API_URL=http://localhost:8001
+# For production (Railway):
+# NEXT_PUBLIC_INTEGRATION_API_URL=https://carboncheck-integration.railway.app
+
+# Registry Service API (Optional - for direct registry access)
+# For local development:
+NEXT_PUBLIC_REGISTRY_API_URL=http://localhost:3001
+# For production (Railway):
+# NEXT_PUBLIC_REGISTRY_API_URL=https://carboncheck-registry.railway.app
+
+# ===================================
+# Deployment Notes
+# ===================================
+# - All NEXT_PUBLIC_* variables are exposed to the browser
+# - Never put secrets in NEXT_PUBLIC_* variables
+# - Set these in Vercel dashboard under Project Settings > Environment Variables
+# - Required for production: NEXT_PUBLIC_API_URL
+# - Optional for production: NEXT_PUBLIC_INTEGRATION_API_URL, NEXT_PUBLIC_REGISTRY_API_URL
+</file>
+
 <file path="apps/web/package.json">
 {
   "name": "carboncheck-web",
@@ -18258,6 +19856,234 @@ export default function RootLayout({
     "eslint-config-next": "14.2.3"
   }
 }
+</file>
+
+<file path="apps/web/README.md">
+# CarbonCheck Frontend
+
+Next.js 14 frontend application for carbon credit verification and fraud detection.
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+- **Icons**: Lucide React
+- **Language**: TypeScript
+
+## Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+## Features
+
+### User Story 1: Single Credit Verification
+- `/verify` - Verify individual carbon credits
+- Real-time trust score calculation with 4-check breakdown
+- Color-coded verdict badges (PASS/WARNING/FAIL)
+- Data provenance and fallback indicators
+
+### User Story 2: Bulk Credit Audit
+- `/verify/bulk` - Upload and verify up to 50 credits at once
+- Ranked fraud report (worst credits first)
+- CSV export functionality
+- Per-item error handling
+
+### User Story 3: Public Leaderboard
+- `/leaderboard` - Public "Hall of Shame" for most-flagged credits
+- Category filtering (Renewable Energy, Forestry, etc.)
+- No login required
+- Real-time flag count updates
+
+## Environment Variables
+
+```bash
+# Optional: Backend API URL
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# If not set, the app uses mock data automatically
+```
+
+## Project Structure
+
+```
+apps/web/
+├── app/
+│   ├── layout.tsx          # Root layout with NavBar
+│   ├── page.tsx            # Landing page
+│   ├── verify/
+│   │   ├── page.tsx        # Single verify
+│   │   └── bulk/
+│   │       └── page.tsx    # Bulk verify
+│   └── leaderboard/
+│       └── page.tsx        # Public leaderboard
+├── components/
+│   ├── ui/                 # shadcn/ui primitives
+│   ├── trust-score-card.tsx
+│   ├── trust-score-ring.tsx
+│   ├── verdict-badge.tsx
+│   ├── fraud-risk-list.tsx
+│   ├── provenance-badges.tsx
+│   ├── bulk-fraud-report-table.tsx
+│   ├── leaderboard-table.tsx
+│   └── nav-bar.tsx
+└── lib/
+    ├── api.ts              # API client with fallback
+    ├── mock.ts             # Mock data generator
+    └── utils.ts            # Utility functions
+```
+
+## Mock Data
+
+The application works 100% offline with mock data. Three predefined examples:
+
+- `VCS-2024-001` - PASS (score: 92)
+- `GOLD-2023-556` - WARNING (score: 58)
+- `ACR-2021-999` - FAIL (score: 15)
+
+Any other ID generates random realistic data.
+
+## Design System
+
+### Trust Score Ring
+- **Red (0-40)**: FAIL - High fraud risk
+- **Amber (41-70)**: WARNING - Medium risk
+- **Green (71-100)**: PASS - Low risk
+
+### Verdict Badges
+- Uppercase styling (FAIL/WARNING/PASS)
+- Color-coded backgrounds with borders
+- Consistent sizing (sm/md/lg)
+
+### Dark Mode
+Default dark theme optimized for B2B compliance tools.
+
+## API Integration
+
+When `NEXT_PUBLIC_API_URL` is set, the frontend automatically:
+1. Attempts to call the backend API
+2. Falls back to mock data on timeout/error
+3. Displays data provenance badges
+
+All API calls have automatic fallback - the demo never breaks.
+
+## Development
+
+### Adding New Components
+
+```bash
+# Install shadcn components
+npx shadcn-ui@latest add [component-name]
+```
+
+### Type Safety
+
+All API responses use TypeScript interfaces defined in `lib/mock.ts`:
+- `TrustScoreResult`
+- `BulkVerifyResult`
+- `LeaderboardEntry`
+
+## Production Deployment (Vercel)
+
+### Prerequisites
+1. A Vercel account ([vercel.com](https://vercel.com))
+2. Backend services deployed on Railway (see `backend/README.md`)
+
+### Deployment Steps
+
+#### 1. Connect Repository to Vercel
+- Import your repository in Vercel dashboard
+- Select **monorepo** setup
+
+#### 2. Configure Root Directory
+In Vercel project settings:
+- **Framework Preset**: Next.js
+- **Root Directory**: `apps/web`
+- **Build Command**: `npm run build` (auto-detected)
+- **Install Command**: `npm install` (auto-detected)
+- **Output Directory**: `.next` (auto-detected)
+
+#### 3. Set Environment Variables
+In Vercel Dashboard → Settings → Environment Variables:
+
+**Required:**
+```bash
+NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+```
+
+**Optional (for full integration):**
+```bash
+NEXT_PUBLIC_INTEGRATION_API_URL=https://your-integration-layer.railway.app
+NEXT_PUBLIC_REGISTRY_API_URL=https://your-registry-service.railway.app
+```
+
+**Important Notes:**
+- All `NEXT_PUBLIC_*` variables are exposed to the browser
+- Never put secrets in `NEXT_PUBLIC_*` variables
+- The app works with mock data if `NEXT_PUBLIC_API_URL` is not set
+- Set variables for all environments (Production, Preview, Development)
+
+#### 4. Deploy
+```bash
+# Deploy via Git (automatic)
+git push origin main
+
+# Or deploy via Vercel CLI
+npx vercel
+```
+
+### Verification
+After deployment:
+1. Visit your Vercel URL (e.g., `https://carboncheck.vercel.app`)
+2. Test the `/verify` page with a credit ID
+3. Check browser console for API connection status
+4. Verify data provenance badges show "Live API" when backend is connected
+
+### Troubleshooting
+
+**Issue: Frontend shows mock data instead of real API data**
+- Check that `NEXT_PUBLIC_API_URL` is set in Vercel
+- Verify backend is accessible (check Railway logs)
+- Check browser console for CORS or network errors
+
+**Issue: Build fails on Vercel**
+- Ensure `package.json` has all required dependencies
+- Check that TypeScript compiles locally: `npm run build`
+- Review Vercel build logs for specific errors
+
+**Issue: Environment variables not working**
+- Redeploy after adding environment variables
+- Ensure variable names start with `NEXT_PUBLIC_`
+- Check that variables are set for the correct environment (Production/Preview)
+
+### Performance Optimization
+- Next.js automatically optimizes images and fonts
+- API calls include timeout and error handling
+- Client-side caching for leaderboard data
+- Automatic code splitting per route
+
+### Monitoring
+- Use Vercel Analytics for performance metrics
+- Check Vercel Logs for runtime errors
+- Monitor backend API health at `https://your-backend.railway.app/health`
+
+## License
+
+MIT
 </file>
 
 <file path="backend/app/routers/leaderboard.py">
@@ -19226,26 +21052,165 @@ class NDVIProcessor:
         return [(timeseries[0].date, timeseries[-1].date, slope)]
 </file>
 
-<file path="backend/.env.example">
-# Supabase Configuration
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-key-here
+<file path="integration-layer/.env.example">
+# ===================================
+# Integration Layer Environment
+# ===================================
 
-# Environment
-ENVIRONMENT=development
-DEBUG=true
-LOG_LEVEL=INFO
+# ===================================
+# UNDP Registry Service
+# ===================================
+# Local development:
+REGISTRY_SERVICE_URL=http://localhost:3001
+# Production (Railway):
+# REGISTRY_SERVICE_URL=https://carboncheck-registry.railway.app
 
-# API Configuration
-EXTERNAL_API_TIMEOUT=15
-BULK_VERIFY_MAX_IDS=50
+REGISTRY_TIMEOUT=30
 
+# ===================================
+# Supabase (CarbonCheck Database)
+# ===================================
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_service_key
+
+# ===================================
 # Sentinel Hub API (Copernicus Data Space)
-# Register at: https://dataspace.copernicus.eu/
-# Create OAuth client: Dashboard > User Settings > OAuth Clients
-SENTINEL_CLIENT_ID=your-sentinel-client-id
-SENTINEL_CLIENT_SECRET=your-sentinel-client-secret
+# ===================================
+# Replaces Google Earth Engine for satellite imagery
+SATELLITE_API_ENABLED=true
+SENTINEL_CLIENT_ID=your_sentinel_client_id
+SENTINEL_CLIENT_SECRET=your_sentinel_client_secret
 SENTINEL_API_URL=https://sh.dataspace.copernicus.eu/api/v1/process
+
+# ===================================
+# Feature Flags
+# ===================================
+ENABLE_AUTO_VERIFICATION=false
+ENABLE_REGISTRY_SYNC=true
+
+# ===================================
+# Railway Deployment
+# ===================================
+# PORT is automatically set by Railway
+# No need to set this manually
+# PORT=8000
+</file>
+
+<file path="integration-layer/Dockerfile">
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose port (Railway will override with $PORT)
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://localhost:${PORT:-8000}/health')" || exit 1
+
+# Start the application with PORT from environment
+# Railway provides $PORT, default to 8000 for local development
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+</file>
+
+<file path="registry-service/src/config/configuration.ts">
+export default () => ({
+  // Railway sets PORT, fallback to REGISTRY_PORT for local dev, then 3001
+  port: parseInt(process.env.PORT || process.env.REGISTRY_PORT, 10) || 3001,
+  database: {
+    type: 'postgres',
+    host: process.env.REGISTRY_DB_HOST || 'localhost',
+    port: parseInt(process.env.REGISTRY_DB_PORT, 10) || 5432,
+    username: process.env.REGISTRY_DB_USER || 'postgres',
+    password: process.env.REGISTRY_DB_PASSWORD || '',
+    database: process.env.REGISTRY_DB_NAME || 'carbon_registry',
+    synchronize: process.env.NODE_ENV !== 'production',
+    autoLoadEntities: true,
+    logging: process.env.NODE_ENV !== 'production' ? ['error', 'query'] : ['error'],
+  },
+  systemCountry: process.env.SYSTEM_COUNTRY || 'NG',
+  systemCountryName: process.env.SYSTEM_COUNTRY_NAME || 'Nigeria',
+  defaultCreditUnit: process.env.DEFAULT_CREDIT_UNIT || 'tCO2e',
+});
+</file>
+
+<file path="registry-service/.env.example">
+# ===================================
+# Registry Service Environment
+# ===================================
+
+# ===================================
+# Server Configuration
+# ===================================
+# Local development port (Railway will use $PORT automatically)
+REGISTRY_PORT=3001
+
+# ===================================
+# Database Configuration
+# ===================================
+# PostgreSQL connection settings
+REGISTRY_DB_HOST=localhost
+REGISTRY_DB_PORT=5432
+REGISTRY_DB_USER=postgres
+REGISTRY_DB_PASSWORD=your_password_here
+REGISTRY_DB_NAME=carbon_registry
+
+# For Railway deployment with Railway PostgreSQL:
+# REGISTRY_DB_HOST=${{Postgres.PGHOST}}
+# REGISTRY_DB_PORT=${{Postgres.PGPORT}}
+# REGISTRY_DB_USER=${{Postgres.PGUSER}}
+# REGISTRY_DB_PASSWORD=${{Postgres.PGPASSWORD}}
+# REGISTRY_DB_NAME=${{Postgres.PGDATABASE}}
+
+# ===================================
+# System Configuration
+# ===================================
+NODE_ENV=development
+SYSTEM_COUNTRY=NG
+SYSTEM_COUNTRY_NAME=Nigeria
+DEFAULT_CREDIT_UNIT=tCO2e
+
+# ===================================
+# Railway Deployment
+# ===================================
+# PORT is automatically set by Railway
+# No need to set this manually
+# PORT=3000
+</file>
+
+<file path="registry-service/Dockerfile">
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (production only for smaller image)
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Expose port (Railway will override with $PORT)
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/api/v1/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start the production server
+CMD ["npm", "run", "start:prod"]
 </file>
 
 <file path="specs/001-carboncheck-trust-journeys/data-model.md">
@@ -19930,123 +21895,93 @@ T046
 3. Keep one demo-safe rollback tag after each story checkpoint.
 </file>
 
-<file path="README.md">
-# CarbonCheck: Stop Buying Fake Carbon Credits
+<file path=".gitignore">
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+ENV/
+env/
+.venv
 
-**$2 billion in fraudulent carbon credits were sold in 2023.** Corporate buyers have no fast way to verify legitimacy before purchase approval. Auditors drown in spreadsheets. The public can't see which credits keep failing checks.
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
+build/
 
-## The Problem
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
 
-- **$2B in fraudulent credits sold in 2023** — buyers lack real-time fraud detection at point of purchase
-- **ESG auditors waste 40+ hours per portfolio review** — manual verification across 4+ registries with no rank-by-risk tooling
-- **Zero public accountability** — high-risk credits stay hidden; no leaderboard exposes repeat offenders by credit type
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-## The Solution
+# OS
+.DS_Store
+Thumbs.db
 
-CarbonCheck scores any carbon credit ID in under 5 seconds with deterministic FAIL/WARNING/PASS verdicts, bulk audit API for 50-credit batches, and a public Leaderboard of Shame.
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
 
-## Live Demo
+# Logs
+*.log
+logs/
 
-🔗 **[https://YOUR_VERCEL_URL.vercel.app](https://YOUR_VERCEL_URL.vercel.app)**
+# Aider
+.aider*
 
-Try it:
-1. Paste credit ID `FOR-2891-IND-2019` → get instant Trust Score
-2. View public leaderboard (no login) → see most-flagged Forestry/Renewable/Soil credits
+# Cache
+.cache/
+*.cache
 
-## Tech Stack
+# Temporary files
+*.tmp
+temp/
+tmp/
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Frontend** | Next.js 14 + TypeScript | Sub-3s page loads, Vercel edge deploy |
-| **API** | FastAPI + Python 3.11 | 3-second per-source timeout enforcement, deterministic scoring |
-| **Data** | Supabase Postgres | Fallback cache when upstream registries fail |
-| **Deployment** | Vercel (web) + Railway (API) | Zero-downtime hackathon demo reliability |
-| **Testing** | pytest + Playwright | Contract validation + critical journey coverage |
+# Worktrees
+worktrees/
 
-## Local Setup
+# Repomix output
+repomix-output.xml
 
-```bash
-# 1. Clone and install
-git clone https://github.com/perfectking321/carboncheck.git
-cd carboncheck && npm install && pip install -r requirements.txt
-
-# 2. Set environment variables
-cp .env.example .env  # Add Supabase URL + anon key
-
-# 3. Run migrations
-supabase db push
-
-# 4. Start services
-npm run dev          # Frontend on :3000
-python -m uvicorn app.main:app --reload  # API on :8000
-```
-
-## API Quick Start
-
-```bash
-# Verify single credit ID
-curl -X POST https://YOUR_VERCEL_URL.vercel.app/api/verify \
-  -H "Content-Type: application/json" \
-  -d '{"credit_id": "FOR-2891-IND-2019"}'
-
-# Example response (returns in <5 seconds):
-{
-  "request_id": "550e8400-e29b-41d4-a716-446655440000",
-  "mode": "single",
-  "data_mode": "live",
-  "fallback_used": false,
-  "timeout_seconds": 3,
-  "results": [{
-    "credit_id": "FOR-2891-IND-2019",
-    "trust_score": 23,
-    "verdict": "FAIL",
-    "rank": 1,
-    "checks": {
-      "baseline_match": {"score": 12, "weight": 0.30},
-      "additionality": {"score": 45, "weight": 0.25},
-      "permanence_risk": {"score": 8, "weight": 0.25},
-      "double_counting": {"score": 78, "weight": 0.20}
-    },
-    "evidence_summary": "No baseline documentation in CEA registry; high deforestation risk per Grid-India satellite data.",
-    "provenance": [
-      {"source": "ember_api", "fetched_at": "2026-03-24T14:32:11Z", "freshness_state": "fresh", "from_cache": false},
-      {"source": "cea", "fetched_at": "2026-03-24T14:32:11Z", "freshness_state": "fresh", "from_cache": false},
-      {"source": "grid_india", "fetched_at": "2026-03-24T14:32:10Z", "freshness_state": "fresh", "from_cache": false},
-      {"source": "rec_registry", "fetched_at": "2026-03-24T14:32:09Z", "freshness_state": "fresh", "from_cache": false}
-    ]
-  }],
-  "errors": []
-}
-```
-
-## Architecture Highlights
-
-- **Deterministic scoring**: Same input + same source snapshot = identical score every time
-- **Never returns HTTP 500**: Domain errors wrapped in structured envelopes
-- **3-second upstream timeout**: Each external registry capped; system falls back to Supabase cache
-- **Bulk API handles 50 IDs**: Returns ranked fraud report ordered highest-to-lowest risk
-
-## Business Model
-
-- **Freemium**: 10 free verifications/month, public leaderboard access
-- **Pro ($49/mo)**: 500 verifications, CSV export, audit trail
-- **Enterprise API**: Unlimited verifications, SLA guarantees, webhook integrations
-- **Addressable market**: $16 trillion voluntary carbon market by 2030 (McKinsey)
-
-## Roadmap
-
-- **Week 1**: Add blockchain registry integrations (Verra, Gold Standard)
-- **Month 1**: ML fraud pattern detection across 100K+ historical credits
-- **Month 3**: Compliance API for SEC climate disclosure requirements
-
-## License
-
-MIT
-
-## Contact
-
-Demo questions? **demo@carboncheck.io**  
-Judge inquiries? **judges@carboncheck.io**
+# Supabase
+.supabase/
+assistant-488005-*.json
 </file>
 
 <file path="apps/web/app/verify/page.tsx">
@@ -20543,6 +22478,51 @@ def get_db_client() -> DatabaseClient:
     Returns the global database client instance.
     """
     return db_client
+</file>
+
+<file path="backend/.env.example">
+# ===================================
+# Supabase Configuration (Required)
+# ===================================
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-key-here
+
+# ===================================
+# Environment Configuration
+# ===================================
+ENVIRONMENT=development
+DEBUG=true
+LOG_LEVEL=INFO
+
+# ===================================
+# API Configuration
+# ===================================
+EXTERNAL_API_TIMEOUT=15
+BULK_VERIFY_MAX_IDS=50
+
+# ===================================
+# CORS Configuration (Production)
+# ===================================
+# Frontend URL for CORS (comma-separated for multiple origins)
+# Example: https://carboncheck.vercel.app
+FRONTEND_URL=
+
+# ===================================
+# Sentinel Hub API (Optional)
+# ===================================
+# Copernicus Data Space for satellite imagery
+# Register at: https://dataspace.copernicus.eu/
+# Create OAuth client: Dashboard > User Settings > OAuth Clients
+SENTINEL_CLIENT_ID=your-sentinel-client-id
+SENTINEL_CLIENT_SECRET=your-sentinel-client-secret
+SENTINEL_API_URL=https://sh.dataspace.copernicus.eu/api/v1/process
+
+# ===================================
+# Railway Deployment
+# ===================================
+# PORT is automatically set by Railway
+# No need to set this manually
+# PORT=8000
 </file>
 
 <file path="specs/001-carboncheck-trust-journeys/contracts/openapi.yaml">
@@ -21223,6 +23203,136 @@ components:
           type: string
           format: date-time
           description: Error timestamp
+</file>
+
+<file path="README.md">
+# CarbonCheck: Stop Buying Fake Carbon Credits
+
+**$2 billion in fraudulent carbon credits were sold in 2023.** Corporate buyers have no fast way to verify legitimacy before purchase approval. Auditors drown in spreadsheets. The public can't see which credits keep failing checks.
+
+## The Problem
+
+- **$2B in fraudulent credits sold in 2023** — buyers lack real-time fraud detection at point of purchase
+- **ESG auditors waste 40+ hours per portfolio review** — manual verification across 4+ registries with no rank-by-risk tooling
+- **Zero public accountability** — high-risk credits stay hidden; no leaderboard exposes repeat offenders by credit type
+
+## The Solution
+
+CarbonCheck scores any carbon credit ID in under 5 seconds with deterministic FAIL/WARNING/PASS verdicts, bulk audit API for 50-credit batches, and a public Leaderboard of Shame.
+
+## Live Demo
+
+🔗 **[https://YOUR_VERCEL_URL.vercel.app](https://YOUR_VERCEL_URL.vercel.app)**
+
+Try it:
+1. Paste credit ID `FOR-2891-IND-2019` → get instant Trust Score
+2. View public leaderboard (no login) → see most-flagged Forestry/Renewable/Soil credits
+
+## Tech Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **Frontend** | Next.js 14 + TypeScript | Sub-3s page loads, Vercel edge deploy |
+| **API** | FastAPI + Python 3.11 | 3-second per-source timeout enforcement, deterministic scoring |
+| **Data** | Supabase Postgres | Fallback cache when upstream registries fail |
+| **Deployment** | Vercel (web) + Railway (API) | Zero-downtime hackathon demo reliability |
+| **Testing** | pytest + Playwright | Contract validation + critical journey coverage |
+
+## Local Setup
+
+```bash
+# 1. Clone and install
+git clone https://github.com/perfectking321/carboncheck.git
+cd carboncheck && npm install && pip install -r requirements.txt
+
+# 2. Set environment variables
+cp .env.example .env  # Add Supabase URL + anon key
+
+# 3. Run migrations
+supabase db push
+
+# 4. Start services
+npm run dev          # Frontend on :3000
+python -m uvicorn app.main:app --reload  # API on :8000
+```
+
+## Production Deployment
+
+📘 **See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment guide**
+
+Quick overview:
+- **Frontend**: Deploy to Vercel from `apps/web/`
+- **Backend Services**: Deploy to Railway from `backend/`, `integration-layer/`, and `registry-service/`
+- **Database**: Supabase (main) + Railway PostgreSQL (registry)
+
+All services are containerized and ready for production deployment.
+
+## API Quick Start
+
+```bash
+# Verify single credit ID
+curl -X POST https://YOUR_VERCEL_URL.vercel.app/api/verify \
+  -H "Content-Type: application/json" \
+  -d '{"credit_id": "FOR-2891-IND-2019"}'
+
+# Example response (returns in <5 seconds):
+{
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "mode": "single",
+  "data_mode": "live",
+  "fallback_used": false,
+  "timeout_seconds": 3,
+  "results": [{
+    "credit_id": "FOR-2891-IND-2019",
+    "trust_score": 23,
+    "verdict": "FAIL",
+    "rank": 1,
+    "checks": {
+      "baseline_match": {"score": 12, "weight": 0.30},
+      "additionality": {"score": 45, "weight": 0.25},
+      "permanence_risk": {"score": 8, "weight": 0.25},
+      "double_counting": {"score": 78, "weight": 0.20}
+    },
+    "evidence_summary": "No baseline documentation in CEA registry; high deforestation risk per Grid-India satellite data.",
+    "provenance": [
+      {"source": "ember_api", "fetched_at": "2026-03-24T14:32:11Z", "freshness_state": "fresh", "from_cache": false},
+      {"source": "cea", "fetched_at": "2026-03-24T14:32:11Z", "freshness_state": "fresh", "from_cache": false},
+      {"source": "grid_india", "fetched_at": "2026-03-24T14:32:10Z", "freshness_state": "fresh", "from_cache": false},
+      {"source": "rec_registry", "fetched_at": "2026-03-24T14:32:09Z", "freshness_state": "fresh", "from_cache": false}
+    ]
+  }],
+  "errors": []
+}
+```
+
+## Architecture Highlights
+
+- **Deterministic scoring**: Same input + same source snapshot = identical score every time
+- **Never returns HTTP 500**: Domain errors wrapped in structured envelopes
+- **3-second upstream timeout**: Each external registry capped; system falls back to Supabase cache
+- **Bulk API handles 50 IDs**: Returns ranked fraud report ordered highest-to-lowest risk
+
+## Business Model
+
+- **Freemium**: 10 free verifications/month, public leaderboard access
+- **Pro ($49/mo)**: 500 verifications, CSV export, audit trail
+- **Enterprise API**: Unlimited verifications, SLA guarantees, webhook integrations
+- **Addressable market**: $16 trillion voluntary carbon market by 2030 (McKinsey)
+
+## Roadmap
+
+- **Week 1**: Add blockchain registry integrations (Verra, Gold Standard)
+- **Month 1**: ML fraud pattern detection across 100K+ historical credits
+- **Month 3**: Compliance API for SEC climate disclosure requirements
+
+## License
+
+MIT
+
+## Contact
+
+Demo questions? **demo@carboncheck.io**  
+Judge inquiries? **judges@carboncheck.io**
 </file>
 
 <file path="start.sh">
