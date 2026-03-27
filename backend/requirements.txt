@@ -7,38 +7,25 @@ pydantic-settings==2.11.0
 # Database
 supabase==2.28.3
 
-# Development
-pytest==7.4.4
-pytest-asyncio==0.23.4
-
-# NEW: Ground Layer
+# Ground Layer (PDF/HTML parsing)
 pdfplumber==0.10.3
 beautifulsoup4==4.12.3
 lxml==5.1.0
 
-# NEW: Satellite Layer (Sentinel Hub API)
-# earthengine-api removed - replaced with Sentinel Hub
-rasterio==1.3.9
+# Satellite Layer - lightweight only
+# Note: rasterio/geopandas removed - code has fallback using struct for TIFF parsing
+# The Statistical API returns JSON directly, no TIFF parsing needed
 tifffile==2024.2.12
-geopandas==0.14.2
 shapely==2.0.2
 
-# NEW: AI Layer
-torch==2.1.2; python_version < "3.12"
-torch==2.2.0; python_version >= "3.12"
-torchvision==0.16.2; python_version < "3.12"
-torchvision==0.17.0; python_version >= "3.12"
+# AI Layer - only scikit-learn is actually used in anomaly_detector.py
+# torch, torchvision, xgboost, pyod were never imported - REMOVED to save ~4GB
 scikit-learn==1.4.0
-xgboost==2.0.3
-pyod==1.1.3
 
-# NEW: Data Processing
+# Data Processing
 pandas==2.1.4
 numpy==1.26.3
 pillow==10.2.0
-
-# NEW: Geospatial
-pyproj==3.6.1
 
 # HTTP Client
 httpx==0.28.1

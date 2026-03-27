@@ -1,8 +1,8 @@
-# Multi-stage build for optimized backend image
-# Target size: < 500 MB (production runtime only)
+# Optimized multi-stage build for Railway
+# Target size: < 1 GB (removed unused ML packages)
 
 # Cache buster - change this value to force Railway rebuild
-ARG CACHE_BUST=v3
+ARG CACHE_BUST=v4-lean
 
 # ============================================
 # Stage 1: Builder - Install dependencies
@@ -14,20 +14,12 @@ RUN echo "Cache bust: ${CACHE_BUST}"
 
 WORKDIR /build
 
-# Install system dependencies for geospatial libraries (GDAL, GEOS, PROJ)
+# Install only essential build dependencies
+# NOTE: GDAL removed - rasterio/geopandas not used, code has fallback
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
-    gdal-bin \
-    libgdal-dev \
-    libgeos-dev \
-    libproj-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# Set GDAL environment variables for compilation
-ENV GDAL_CONFIG=/usr/bin/gdal-config \
-    CPLUS_INCLUDE_PATH=/usr/include/gdal \
-    C_INCLUDE_PATH=/usr/include/gdal
 
 # Create virtual environment
 RUN python -m venv /opt/venv
@@ -50,14 +42,13 @@ RUN echo "Cache bust: ${CACHE_BUST}"
 
 WORKDIR /app
 
-# Install runtime geospatial libraries
-# Only gdal-bin - apt will automatically pull correct dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gdal-bin && \
-    rm -rf /var/lib/apt/lists/*
+# No additional system packages needed!
+# GDAL/GEOS/PROJ removed since rasterio/geopandas not used
 
 # Set environment variables
-ENV PATH="/opt/venv/bin:$PATH"
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 # Copy virtual environment from builder stage
 COPY --from=builder /opt/venv /opt/venv
