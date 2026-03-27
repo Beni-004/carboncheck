@@ -48,6 +48,17 @@ npm run dev          # Frontend on :3000
 python -m uvicorn app.main:app --reload  # API on :8000
 ```
 
+## Production Deployment
+
+📘 **See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment guide**
+
+Quick overview:
+- **Frontend**: Deploy to Vercel from `apps/web/`
+- **Backend Services**: Deploy to Railway from `backend/`, `integration-layer/`, and `registry-service/`
+- **Database**: Supabase (main) + Railway PostgreSQL (registry)
+
+All services are containerized and ready for production deployment.
+
 ## API Quick Start
 
 ```bash

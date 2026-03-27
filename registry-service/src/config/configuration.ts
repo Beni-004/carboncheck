@@ -1,5 +1,6 @@
 export default () => ({
-  port: parseInt(process.env.REGISTRY_PORT, 10) || 3001,
+  // Railway sets PORT, fallback to REGISTRY_PORT for local dev, then 3001
+  port: parseInt(process.env.PORT || process.env.REGISTRY_PORT, 10) || 3001,
   database: {
     type: 'postgres',
     host: process.env.REGISTRY_DB_HOST || 'localhost',

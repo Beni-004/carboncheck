@@ -136,6 +136,90 @@ All API responses use TypeScript interfaces defined in `lib/mock.ts`:
 - `BulkVerifyResult`
 - `LeaderboardEntry`
 
+## Production Deployment (Vercel)
+
+### Prerequisites
+1. A Vercel account ([vercel.com](https://vercel.com))
+2. Backend services deployed on Railway (see `backend/README.md`)
+
+### Deployment Steps
+
+#### 1. Connect Repository to Vercel
+- Import your repository in Vercel dashboard
+- Select **monorepo** setup
+
+#### 2. Configure Root Directory
+In Vercel project settings:
+- **Framework Preset**: Next.js
+- **Root Directory**: `apps/web`
+- **Build Command**: `npm run build` (auto-detected)
+- **Install Command**: `npm install` (auto-detected)
+- **Output Directory**: `.next` (auto-detected)
+
+#### 3. Set Environment Variables
+In Vercel Dashboard → Settings → Environment Variables:
+
+**Required:**
+```bash
+NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+```
+
+**Optional (for full integration):**
+```bash
+NEXT_PUBLIC_INTEGRATION_API_URL=https://your-integration-layer.railway.app
+NEXT_PUBLIC_REGISTRY_API_URL=https://your-registry-service.railway.app
+```
+
+**Important Notes:**
+- All `NEXT_PUBLIC_*` variables are exposed to the browser
+- Never put secrets in `NEXT_PUBLIC_*` variables
+- The app works with mock data if `NEXT_PUBLIC_API_URL` is not set
+- Set variables for all environments (Production, Preview, Development)
+
+#### 4. Deploy
+```bash
+# Deploy via Git (automatic)
+git push origin main
+
+# Or deploy via Vercel CLI
+npx vercel
+```
+
+### Verification
+After deployment:
+1. Visit your Vercel URL (e.g., `https://carboncheck.vercel.app`)
+2. Test the `/verify` page with a credit ID
+3. Check browser console for API connection status
+4. Verify data provenance badges show "Live API" when backend is connected
+
+### Troubleshooting
+
+**Issue: Frontend shows mock data instead of real API data**
+- Check that `NEXT_PUBLIC_API_URL` is set in Vercel
+- Verify backend is accessible (check Railway logs)
+- Check browser console for CORS or network errors
+
+**Issue: Build fails on Vercel**
+- Ensure `package.json` has all required dependencies
+- Check that TypeScript compiles locally: `npm run build`
+- Review Vercel build logs for specific errors
+
+**Issue: Environment variables not working**
+- Redeploy after adding environment variables
+- Ensure variable names start with `NEXT_PUBLIC_`
+- Check that variables are set for the correct environment (Production/Preview)
+
+### Performance Optimization
+- Next.js automatically optimizes images and fonts
+- API calls include timeout and error handling
+- Client-side caching for leaderboard data
+- Automatic code splitting per route
+
+### Monitoring
+- Use Vercel Analytics for performance metrics
+- Check Vercel Logs for runtime errors
+- Monitor backend API health at `https://your-backend.railway.app/health`
+
 ## License
 
 MIT
