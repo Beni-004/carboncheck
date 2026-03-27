@@ -34,7 +34,7 @@ Try it:
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/YOUR_ORG/carboncheck.git
+git clone https://github.com/perfectking321/carboncheck.git
 cd carboncheck && npm install && pip install -r requirements.txt
 
 # 2. Set environment variables
