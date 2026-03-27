@@ -1,0 +1,20 @@
+# Exclude frontend and spec files from backend build context
+apps/
+.specify/
+.github/
+*.md
+docs/
+node_modules/
+.git/
+frontend-workspace/
+backend-workspace/
+pitch-workspace/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.env
+*.log
