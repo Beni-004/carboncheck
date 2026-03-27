@@ -1,6 +1,50 @@
+/**
+ * API Client for CarbonCheck Backend
+ * Handles communication with FastAPI verification endpoints
+ * Configured for multi-layer verification engine with extended timeouts
+ */
+
 import { getMockResult, getMockBulkResults, getMockLeaderboard, TrustScoreResult, BulkVerifyResult, LeaderboardEntry } from "./mock";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+// Extended timeout for new multi-layer verification engine (10-20s cold start)
+const VERIFICATION_TIMEOUT_MS = 30000; // 30 seconds
+const BULK_VERIFICATION_TIMEOUT_MS = 60000; // 60 seconds for bulk
+
+interface FetchWithTimeoutOptions extends RequestInit {
+  timeout?: number;
+}
+
+/**
+ * Fetch wrapper with timeout support using AbortController
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: FetchWithTimeoutOptions = {}
+): Promise<Response> {
+  const { timeout = VERIFICATION_TIMEOUT_MS, ...fetchOptions } = options;
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(
+        `Request timeout after ${timeout / 1000}s. The verification engine may be performing deep analysis. Please try again.`
+      );
+    }
+    throw error;
+  }
+}
 
 // Helper to log integration status
 const logApiCall = (endpoint: string, useMock: boolean, error?: any) => {
@@ -25,16 +69,19 @@ export async function verifyCreditId(
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/verify`, {
+    const response = await fetchWithTimeout(`${API_BASE}/api/verify`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ creditId }),
+      timeout: VERIFICATION_TIMEOUT_MS,
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.detail || `Verification failed with status ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -43,6 +90,13 @@ export async function verifyCreditId(
   } catch (error) {
     console.warn("API call failed, falling back to mock data", error);
     logApiCall('/api/verify', true, error);
+    
+    // If it's a timeout, throw it to show proper error to user
+    if (error instanceof Error && error.message.includes('timeout')) {
+      throw error;
+    }
+    
+    // For other errors, fallback to mock
     return getMockResult(creditId);
   }
 }
@@ -58,16 +112,22 @@ export async function verifyBulkCredits(
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/verify/bulk`, {
+    // Bulk requests may take longer, scale timeout with batch size
+    const bulkTimeout = Math.max(BULK_VERIFICATION_TIMEOUT_MS, creditIds.length * 1000);
+    
+    const response = await fetchWithTimeout(`${API_BASE}/api/verify/bulk`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ creditIds }),
+      timeout: bulkTimeout,
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.detail || `Bulk verification failed with status ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -76,6 +136,13 @@ export async function verifyBulkCredits(
   } catch (error) {
     console.warn("API call failed, falling back to mock data", error);
     logApiCall('/api/verify/bulk', true, error);
+    
+    // If it's a timeout, throw it to show proper error to user
+    if (error instanceof Error && error.message.includes('timeout')) {
+      throw error;
+    }
+    
+    // For other errors, fallback to mock
     return getMockBulkResults(creditIds);
   }
 }
@@ -96,11 +163,12 @@ export async function getLeaderboard(
     if (category) params.append("category", category);
     params.append("limit", limit.toString());
 
-    const response = await fetch(`${API_BASE}/api/leaderboard?${params}`, {
+    const response = await fetchWithTimeout(`${API_BASE}/api/leaderboard?${params}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
+      timeout: 10000, // Leaderboard should be faster
     });
 
     if (!response.ok) {
@@ -124,8 +192,9 @@ export async function checkApiHealth(): Promise<{ status: string; mode: 'live' |
   }
 
   try {
-    const response = await fetch(`${API_BASE}/health`, {
+    const response = await fetchWithTimeout(`${API_BASE}/health`, {
       method: "GET",
+      timeout: 5000, // Health check should be fast
     });
 
     if (!response.ok) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,15 +14,59 @@ import {
 import { TrustScoreCard } from "@/components/trust-score-card";
 import { FraudRiskList } from "@/components/fraud-risk-list";
 import { ProvenanceBadges } from "@/components/provenance-badges";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { verifyCreditId } from "@/lib/api";
 import { TrustScoreResult } from "@/lib/mock";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 
 export default function VerifyPage() {
   const [creditId, setCreditId] = useState("");
   const [result, setResult] = useState<TrustScoreResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verificationProgress, setVerificationProgress] = useState<string>("");
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+
+  // Progress indicator for long-running verification
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    let startTime: number | null = null;
+
+    if (loading) {
+      startTime = Date.now();
+      const progressMessages = [
+        "Connecting to verification engine...",
+        "Analyzing ground-layer registry data...",
+        "Processing satellite imagery signals...",
+        "Running AI fraud detection models...",
+        "Computing trust score...",
+        "Finalizing verification report...",
+      ];
+
+      let messageIndex = 0;
+      setVerificationProgress(progressMessages[0]);
+
+      intervalId = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime!) / 1000);
+        setElapsedTime(elapsed);
+
+        // Update progress message every 3 seconds
+        if (elapsed > 0 && elapsed % 3 === 0) {
+          messageIndex = Math.min(messageIndex + 1, progressMessages.length - 1);
+          setVerificationProgress(progressMessages[messageIndex]);
+        }
+      }, 1000);
+    } else {
+      setVerificationProgress("");
+      setElapsedTime(0);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,16 +78,22 @@ export default function VerifyPage() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setElapsedTime(0);
 
     try {
       const data = await verifyCreditId(creditId.trim());
       setResult(data);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to verify credit ID"
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to verify credit ID";
+      setError(errorMessage);
+      
+      // Log error for debugging
+      console.error("Verification error:", err);
     } finally {
       setLoading(false);
+      setVerificationProgress("");
+      setElapsedTime(0);
     }
   };
 
@@ -84,7 +134,26 @@ export default function VerifyPage() {
                     className="text-base"
                   />
                 </div>
-                {error && <p className="text-sm text-red-400">{error}</p>}
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Verification Failed</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                {loading && verificationProgress && (
+                  <Alert>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <AlertTitle>Deep Analysis in Progress</AlertTitle>
+                    <AlertDescription>
+                      {verificationProgress}
+                      <br />
+                      <span className="text-xs text-muted-foreground">
+                        Elapsed: {elapsedTime}s (AI and satellite analysis may take 10-20s)
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <Button
                   type="submit"
                   disabled={loading}
