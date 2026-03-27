@@ -5,6 +5,14 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Drop existing tables if they exist (for clean reset)
+DROP TABLE IF EXISTS leaderboard_cache CASCADE;
+DROP TABLE IF EXISTS trust_scores CASCADE;
+DROP TABLE IF EXISTS carbon_credits CASCADE;
+
+-- Drop existing functions if they exist
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
 -- Table: carbon_credits
 -- Stores registry credit data with provenance tracking
 CREATE TABLE carbon_credits (
