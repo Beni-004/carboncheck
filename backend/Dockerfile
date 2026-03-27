@@ -1,11 +1,16 @@
 # Multi-stage build for optimized backend image
 # Target size: < 500 MB (production runtime only)
-# Updated: 2026-03-28 - Fixed GDAL package dependencies for Debian Bookworm
+
+# Cache buster - change this value to force Railway rebuild
+ARG CACHE_BUST=v3
 
 # ============================================
 # Stage 1: Builder - Install dependencies
 # ============================================
 FROM python:3.12-slim AS builder
+
+ARG CACHE_BUST
+RUN echo "Cache bust: ${CACHE_BUST}"
 
 WORKDIR /build
 
@@ -32,37 +37,36 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt .
 
 # Install Python dependencies in the virtual environment
-# --no-cache-dir prevents pip from caching, reducing image size
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # ============================================
 # Stage 2: Runtime - Minimal production image
 # ============================================
-FROM python:3.12-slim
+FROM python:3.12-slim AS runtime
+
+ARG CACHE_BUST
+RUN echo "Cache bust: ${CACHE_BUST}"
 
 WORKDIR /app
 
-# Install ONLY runtime libraries for geospatial support (no compilers)
-# gdal-bin will automatically pull in all required GDAL, GEOS, and PROJ libraries
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gdal-bin \
-    && rm -rf /var/lib/apt/lists/*
+# Install runtime geospatial libraries
+# Only gdal-bin - apt will automatically pull correct dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gdal-bin && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set GDAL environment variables for runtime
-ENV GDAL_CONFIG=/usr/bin/gdal-config \
-    CPLUS_INCLUDE_PATH=/usr/include/gdal \
-    C_INCLUDE_PATH=/usr/include/gdal \
-    PATH="/opt/venv/bin:$PATH"
+# Set environment variables
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy virtual environment from builder stage
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy ONLY application code (no tests, logs, cache, or venv)
+# Copy ONLY application code
 COPY app/ ./app/
 COPY *.py ./
 
-# Expose port (Railway will override with $PORT)
+# Expose port
 EXPOSE 8000
 
 # Health check
@@ -70,5 +74,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import httpx; httpx.get('http://localhost:${PORT:-8000}/health')" || exit 1
 
 # Start the application
-# Railway provides $PORT, default to 8000 for local development
 CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
