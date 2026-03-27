@@ -43,11 +43,9 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install ONLY runtime libraries for geospatial support (no compilers)
+# gdal-bin will automatically pull in all required GDAL, GEOS, and PROJ libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gdal-bin \
-    libgdal34 \
-    libgeos-c1v5 \
-    libproj25 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set GDAL environment variables for runtime
