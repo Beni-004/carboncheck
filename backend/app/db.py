@@ -54,7 +54,14 @@ class DatabaseClient:
         if self._client is None:
             self._initialize_client()
         return self._client
-    
+
+    def table(self, table_name: str):
+        """
+        Proxy method to access Supabase tables directly.
+        Convenience method for self.client.table()
+        """
+        return self.client.table(table_name)
+
     def health_check(self) -> bool:
         """
         Check database connectivity.

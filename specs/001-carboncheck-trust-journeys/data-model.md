@@ -1,102 +1,146 @@
 # Phase 1 Data Model - CarbonCheck Trust Journeys
 
-## Schema Principles
-- Deterministic scoring snapshots: all score rows capture exact check values and source snapshot hash.
-- Rigid constraints: strict enums, bounded ranges, non-nullable core fields, and uniqueness guarantees.
-- Read optimization: leaderboard served from precomputed cache table.
+## Modeling Principles
+- Layer traceability: each verification run captures Ground, Satellite, AI, and Scoring artifacts.
+- Deterministic replay: same normalized input plus same source/model snapshots reproduces same score and verdict.
+- API resilience: cached-source and degraded outcomes are first-class modeled states, not exceptional paths.
 
-## Table: carbon_credits
-Canonical registry metadata plus source freshness references.
+## Entity: credit_project (Ground Layer canonical record)
 
-| Column | Type | Constraints | Notes |
+| Field | Type | Constraints | Notes |
 |---|---|---|---|
 | id | uuid | PK, default gen_random_uuid() | Internal key |
-| credit_id | text | NOT NULL, UNIQUE, CHECK (length(credit_id) between 3 and 128) | User-facing ID |
-| project_name | text | NOT NULL | Credit project name |
-| credit_type | text | NOT NULL, CHECK (credit_type in ('Forestry','Renewable','Soil')) | Leaderboard grouping |
-| issuer | text | NOT NULL | Registry/issuer label |
-| vintage_year | int | NOT NULL, CHECK (vintage_year between 1990 and 2100) | Domain bound |
-| country_code | text | NOT NULL, CHECK (char_length(country_code)=2) | ISO-2 style |
-| status | text | NOT NULL, CHECK (status in ('active','retired','suspended','unknown')) | Current lifecycle |
-| source_embr_fetched_at | timestamptz | NULL | Latest Ember fetch |
-| source_cea_fetched_at | timestamptz | NULL | Latest CEA fetch |
-| source_grid_india_fetched_at | timestamptz | NULL | Latest Grid-India fetch |
-| source_rec_registry_fetched_at | timestamptz | NULL | Latest REC Registry fetch |
-| cache_stale_after | timestamptz | NOT NULL | Freshness threshold for fallback |
+| project_id | text | NOT NULL, UNIQUE, CHECK length 3..128 | External credit ID |
+| registry | text | NOT NULL, CHECK in ('verra','gold_standard','acr','other') | Source registry |
+| project_name | text | NULL | Human-readable name |
+| project_type | text | NOT NULL, CHECK in ('forestry','renewable','soil','other') | Risk grouping |
+| methodology | text | NULL | Registry methodology code |
+| vintage_year | int | NULL, CHECK between 1990 and 2100 | Used by satellite/AI windows |
+| latitude | numeric(9,6) | NULL, CHECK between -90 and 90 | Geo anchor |
+| longitude | numeric(9,6) | NULL, CHECK between -180 and 180 | Geo anchor |
+| claimed_co2_tons | numeric(14,2) | NULL, CHECK >= 0 | Ground-truth claim |
+| registry_url | text | NULL | Evidence source |
+| fetched_at | timestamptz | NOT NULL | Last canonical fetch time |
 | created_at | timestamptz | NOT NULL, default now() | Audit |
 | updated_at | timestamptz | NOT NULL, default now() | Audit |
 
 Indexes:
-- idx_carbon_credits_credit_type (credit_type)
-- idx_carbon_credits_cache_stale_after (cache_stale_after)
+- idx_credit_project_registry_project_id (registry, project_id)
+- idx_credit_project_type (project_type)
 
-## Table: trust_scores
-Per-request deterministic output for one credit_id with full check breakdown.
+## Entity: source_snapshot (Ground/Satellite provenance)
 
-| Column | Type | Constraints | Notes |
+| Field | Type | Constraints | Notes |
 |---|---|---|---|
-| id | uuid | PK, default gen_random_uuid() | Internal key |
-| request_id | uuid | NOT NULL | Correlates API request |
-| carbon_credit_id | uuid | NOT NULL, FK -> carbon_credits(id) ON DELETE CASCADE | Subject credit |
-| baseline_match | numeric(5,2) | NOT NULL, CHECK (baseline_match between 0 and 100) | Check score |
-| additionality | numeric(5,2) | NOT NULL, CHECK (additionality between 0 and 100) | Check score |
-| permanence_risk | numeric(5,2) | NOT NULL, CHECK (permanence_risk between 0 and 100) | Check score (higher is safer after normalization) |
-| double_counting | numeric(5,2) | NOT NULL, CHECK (double_counting between 0 and 100) | Check score |
-| trust_score | numeric(5,2) | NOT NULL, CHECK (trust_score between 0 and 100) | Weighted total |
-| verdict | text | NOT NULL, CHECK (verdict in ('FAIL','WARNING','PASS','UNSCORED')) | User-visible class |
-| rank_in_batch | int | NULL, CHECK (rank_in_batch > 0) | Present in bulk mode |
-| data_mode | text | NOT NULL, CHECK (data_mode in ('live','mixed','cache')) | Provenance mode |
-| fallback_used | boolean | NOT NULL, default false | Any source fallback occurred |
-| source_snapshot_hash | text | NOT NULL | Determinism anchor |
-| evidence_summary | text | NOT NULL | Explainability snippet |
-| error_code | text | NULL | Domain error (never 500) |
+| id | uuid | PK, default gen_random_uuid() | Snapshot key |
+| project_id | uuid | NOT NULL, FK -> credit_project(id) | Subject project |
+| layer | text | NOT NULL, CHECK in ('ground','satellite') | Source layer |
+| source_name | text | NOT NULL | Registry/API/cache identifier |
+| fetched_at | timestamptz | NOT NULL | Source fetch time |
+| freshness_state | text | NOT NULL, CHECK in ('live','cache','stale','mixed') | Provenance state |
+| fallback_used | boolean | NOT NULL, default false | Whether cache substituted live source |
+| snapshot_hash | text | NOT NULL | Determinism anchor material |
+| payload_ref | text | NULL | Pointer to cached payload/blob |
 | created_at | timestamptz | NOT NULL, default now() | Audit |
 
 Indexes:
-- idx_trust_scores_credit_created (carbon_credit_id, created_at desc)
-- idx_trust_scores_request_id (request_id)
-- idx_trust_scores_verdict_created (verdict, created_at desc)
+- idx_source_snapshot_project_layer (project_id, layer, created_at desc)
+- idx_source_snapshot_hash (snapshot_hash)
 
-## Table: leaderboard_cache
-Public read model, refreshed by scheduler.
+## Entity: ai_inference (AI Layer outputs)
 
-| Column | Type | Constraints | Notes |
+| Field | Type | Constraints | Notes |
 |---|---|---|---|
-| id | uuid | PK, default gen_random_uuid() | Internal key |
-| credit_id | text | NOT NULL | Denormalized for fast UI |
-| credit_type | text | NOT NULL, CHECK (credit_type in ('Forestry','Renewable','Soil')) | Category |
-| flagged_count_24h | int | NOT NULL, CHECK (flagged_count_24h >= 0) | Rolling indicator |
-| avg_trust_score_24h | numeric(5,2) | NOT NULL, CHECK (avg_trust_score_24h between 0 and 100) | Trend signal |
-| current_verdict | text | NOT NULL, CHECK (current_verdict in ('FAIL','WARNING','PASS','UNSCORED')) | Snapshot verdict |
-| rank_global | int | NOT NULL, CHECK (rank_global > 0) | Overall rank |
-| rank_by_type | int | NOT NULL, CHECK (rank_by_type > 0) | Per-category rank |
-| evidence_snippet | text | NOT NULL | Public explanation |
-| snapshot_at | timestamptz | NOT NULL | Cache build time |
-| freshness_state | text | NOT NULL, CHECK (freshness_state in ('fresh','stale','degraded')) | Display label |
-
-Constraints:
-- UNIQUE (snapshot_at, credit_type, rank_by_type)
-- UNIQUE (snapshot_at, rank_global)
+| id | uuid | PK, default gen_random_uuid() | Inference key |
+| project_id | uuid | NOT NULL, FK -> credit_project(id) | Subject project |
+| ndvi_avg | numeric(6,4) | NULL | Aggregated vegetation signal |
+| ndvi_trend | numeric(7,5) | NULL | Annualized trend |
+| estimated_co2_tons | numeric(14,2) | NULL, CHECK >= 0 | AI estimate |
+| uncertainty_pct | numeric(5,2) | NULL, CHECK between 0 and 100 | Model uncertainty |
+| anomaly_score | numeric(6,4) | NULL | Outlier strength |
+| anomaly_flag | boolean | NOT NULL, default false | Binary anomaly output |
+| model_family | text | NOT NULL | e.g. torchgeo/xgboost/pyod |
+| model_version | text | NOT NULL | Reproducibility control |
+| feature_hash | text | NOT NULL | Determinism anchor material |
+| inferred_at | timestamptz | NOT NULL | Inference timestamp |
 
 Indexes:
-- idx_leaderboard_cache_snapshot_type_rank (snapshot_at desc, credit_type, rank_by_type)
-- idx_leaderboard_cache_snapshot_global_rank (snapshot_at desc, rank_global)
+- idx_ai_inference_project_time (project_id, inferred_at desc)
+- idx_ai_inference_model_version (model_family, model_version)
 
-## Derived Rules
+## Entity: verification_run (Scoring Layer durable result)
+
+| Field | Type | Constraints | Notes |
+|---|---|---|---|
+| id | uuid | PK, default gen_random_uuid() | Verification key |
+| request_id | uuid | NOT NULL | Correlates API call |
+| project_id | uuid | NOT NULL, FK -> credit_project(id) | Subject project |
+| source_snapshot_hash | text | NOT NULL | Combined source determinism anchor |
+| model_snapshot_hash | text | NULL | AI/model determinism anchor |
+| trust_score | numeric(5,2) | NOT NULL, CHECK between 0 and 100 | Final score |
+| verdict | text | NOT NULL, CHECK in ('FAIL','WARNING','PASS','UNVERIFIED') | User-facing decision |
+| data_mode | text | NOT NULL, CHECK in ('live','mixed','cache') | Availability mode |
+| fallback_used | boolean | NOT NULL, default false | Any fallback in execution |
+| rank_in_batch | int | NULL, CHECK > 0 | Bulk-order value |
+| error_code | text | NULL | Partial/terminal domain error code |
+| created_at | timestamptz | NOT NULL, default now() | Audit |
+
+Indexes:
+- idx_verification_run_request (request_id)
+- idx_verification_run_project_created (project_id, created_at desc)
+- idx_verification_run_verdict_created (verdict, created_at desc)
+
+## Entity: verification_check (Scoring Layer per-check evidence)
+
+| Field | Type | Constraints | Notes |
+|---|---|---|---|
+| id | uuid | PK, default gen_random_uuid() | Check key |
+| verification_run_id | uuid | NOT NULL, FK -> verification_run(id) ON DELETE CASCADE | Parent run |
+| check_name | text | NOT NULL | e.g. carbon_overcrediting |
+| passed | boolean | NOT NULL | Check pass/fail |
+| points_awarded | int | NOT NULL, CHECK between 0 and 25 | Scoring contribution |
+| severity | text | NOT NULL, CHECK in ('low','medium','high','critical') | Risk indicator |
+| evidence_text | text | NOT NULL | Explainable evidence |
+
+Unique constraint:
+- UNIQUE (verification_run_id, check_name)
+
+## Entity: leaderboard_snapshot (Public read model)
+
+| Field | Type | Constraints | Notes |
+|---|---|---|---|
+| id | uuid | PK, default gen_random_uuid() | Snapshot entry key |
+| snapshot_at | timestamptz | NOT NULL | Refresh timestamp |
+| project_id | text | NOT NULL | Public identifier |
+| project_type | text | NOT NULL, CHECK in ('forestry','renewable','soil','other') | Grouping |
+| current_verdict | text | NOT NULL, CHECK in ('FAIL','WARNING','PASS','UNVERIFIED') | Display verdict |
+| trust_score | numeric(5,2) | NOT NULL, CHECK between 0 and 100 | Display score |
+| flagged_count_24h | int | NOT NULL, CHECK >= 0 | Trend signal |
+| rank_overall | int | NOT NULL, CHECK > 0 | Global ranking |
+| rank_by_type | int | NOT NULL, CHECK > 0 | Category ranking |
+| freshness_state | text | NOT NULL, CHECK in ('fresh','stale','degraded') | Transparency badge |
+| evidence_snippet | text | NOT NULL | Human-readable explanation |
+
+Indexes:
+- idx_leaderboard_snapshot_global (snapshot_at desc, rank_overall)
+- idx_leaderboard_snapshot_type (snapshot_at desc, project_type, rank_by_type)
+
+## Derived Validation Rules
+- Verify request accepts exactly one mode:
+  - single: one `project_id`
+  - bulk: array `project_ids` length 1..50
+- Invalid IDs produce per-item errors without failing valid IDs in the same batch.
 - Verdict mapping:
-  - FAIL: trust_score < 40
-  - WARNING: trust_score >= 40 and trust_score < 70
-  - PASS: trust_score >= 70
-- Weighted total:
-  - trust_score = round((baseline_match*0.30 + additionality*0.25 + permanence_risk*0.25 + double_counting*0.20), 2)
+  - FAIL: `trust_score < 40`
+  - WARNING: `40 <= trust_score < 70`
+  - PASS: `trust_score >= 70`
+  - UNVERIFIED: required cross-layer evidence missing
 
 ## State Transitions
-- carbon_credits.status:
-  - unknown -> active|suspended|retired
-  - active -> suspended|retired
-  - suspended -> active|retired
-  - retired -> retired (terminal)
-- freshness_state in leaderboard_cache:
-  - fresh -> stale when snapshot age exceeds SLA
-  - stale -> degraded if one or more upstream sources unavailable in latest refresh
-  - degraded -> fresh when all upstream sources healthy and refresh succeeds
+- Freshness lifecycle:
+  - `live -> mixed` when one or more sources fallback
+  - `mixed -> cache` when all sources served from cache
+  - any state -> `live` when all sources recover
+- Verification lifecycle:
+  - `UNVERIFIED -> WARNING|FAIL|PASS` after sufficient evidence arrives
+  - `PASS|WARNING|FAIL -> UNVERIFIED` if replay detects missing mandatory evidence under stricter policy

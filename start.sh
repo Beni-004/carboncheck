@@ -80,7 +80,7 @@ print_success "Python dependencies installed"
 # Step 3: Check database connection
 echo ""
 echo "Step 3: Checking database connection..."
-if python test_db_connection.py 2>&1 | grep -q "✓.*table exists"; then
+if python test_db_connection.py 2>&1 | grep -q "health check passed"; then
     print_success "Database tables found!"
 else
     print_error "Database tables not found!"

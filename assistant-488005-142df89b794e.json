@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "assistant-488005",
+  "private_key_id": "142df89b794ebb9209f0b167d19cec1a316ff196",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDVjqvpHH8YcWON\n8kA3UyIxEu+c2hZr3aqc8/p/pryjmbhU5/DjmiE4KQPYHYKDxEuqQ7SDHtlCv1r0\neXUGVcBidxE7E9jAFQ2KrjElw8u0wc8jUX13q6kuW7A3ccFSlL+eHfocfK4TExuR\n14ycb1/+ZxRsaR2h2izEcNY1WEcS25UOyDXqkqKZDNR9rW7pwLenEMBY80hvqCkb\njCL9LG+LjcauEn4xjQ1MJNxkDOuZl69WPCHVGM2i2rFH1JFTN248vXgqoFcewkTg\ny67morStugSa+87ls1+LSoKO8/f2DR60VaNB5Y2VJsTa90cCLwZQ2k6GXg6Og4MI\nz+kRj8bBAgMBAAECggEANN+oDIUzqneYcHKEF66Ljp7jmHAekQJG1alKYgSEO/U5\nQDxU1eU5SFBPVVipEbquCS/OJ5ChtfburAzOPo1InphgOcJGLfiIa8eI/5KkgtJh\nWJs6d0CXGJU24eNWO/38G0fMvvTXnH1knA1EEQ86MyCOW/EClyoPX2uYfYinwDEN\nwVrekl1hCw5tHer6g0r0KIWY1qYo1RCIt3Qye2MaFmjRtMa+sS0WUOeMB1sMk4eq\nZJ3gMJks+jC8oSmrmYXUN6t03lWTV2G0mGrQ/Ex2kJVaLpXas1vdOCB0Iq8oqwBK\n2YMgV9YZ0mnqGCv/B7B0TgoInycSLPv3mAqRlHcbYQKBgQDtTxYdYva98wFksEhf\nb41bpCVjEtglqpUNUAo4RBz8Zx5drMTj5KrJtkeE2lr2fVvYIceIVtuiiGaR/uWO\npBz4UuzHIfBOvsObqDU0MnCUjL6xRyoVb9EsQQ4pGG7HDccrUWUyUt319o2qzlBG\nXmtU+gNNm07DbgN3pEEbxCRqtQKBgQDmYK0ESLDCiBOTM2iGTnmLejLQOOaLAYLY\nhXld3v7EDiTAOkBjzquOjvzpvwlVFt2e6FeeuUFnQX2jf70cce24gDVHNEHRlOUS\nIxvOPfh2UZOgQf2QjAaa2fBs+iT17ghT2d4kVhQ4KN+F3nyrUmTfRkS9Lxh8gjCl\nD+Uj9zvXXQKBgD64HUctBbuUQzUCZk5a5EhpLLxvmZLy76vyEJFoZyTKeDsX033L\nzNu9Ak/5ifsFjMWlv9+n3Sqq1DkX3kIB2+pBuHS04pddUcONBGrEPf70591gyp2Z\nzPXeR8jSvUx8trwbKhzPy/wa6rxPBOZkRAfUgBT9zCZYqC/xyId3IozVAoGAOEH7\nfkRSBe88+IFhUQrw24KnzflXMzLXRRCzJp1CEZZymw6eksDxXArG8D3ahZDj5d5P\nJ0+ODS0NBVQ4Vi3sI1YLrKuyNv/pQJiaPa8ccahSKJx000uegUofUD11sSjDl9Zo\nTO9IWL6Cdypxv1SLlYqPVrOdgyo3vtc22aWSU3ECgYEAu0PFyvX9rdwR5UzqNOem\ns3cvn8KEghFV3HIsbAHDbRgwIWPe31vtNKkcYNJJGz+Fd8h1k6kMqhrQyMEjcRSi\n19o7YgfsmDgpspzWgMbhJwoXTo+d09CT4L1BPwNW6lNOG/xnmuxZoPwdYiRhOiiF\nrHaungmLVGk3vsx3oAda6ok=\n-----END PRIVATE KEY-----\n",
+  "client_email": "carboncredit@assistant-488005.iam.gserviceaccount.com",
+  "client_id": "114894286062839467941",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/carboncredit%40assistant-488005.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

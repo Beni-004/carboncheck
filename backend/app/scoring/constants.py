@@ -135,7 +135,8 @@ def compute_data_mode(sources_used_cache: list[bool]) -> DataModeType:
 # ============================================================================
 
 # Fixed timeout for all external API calls (seconds)
-EXTERNAL_API_TIMEOUT = 3.0
+# Increased to accommodate slower registry scraping and satellite data operations
+EXTERNAL_API_TIMEOUT = 15.0
 
 # Retry configuration (disabled for hackathon to prioritize fallback)
 EXTERNAL_API_RETRIES = 0

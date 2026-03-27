@@ -27,37 +27,38 @@ logger = logging.getLogger(__name__)
 async def verify_single(credit_id: str) -> dict:
     """
     Verify a single carbon credit using the 3-layer verification engine.
-    
+
     Flow:
     1. Ground Layer: Fetch registry data
     2. Satellite Layer: Fetch NDVI time series
     3. AI Layer: Predict carbon from NDVI
     4. Scoring Layer: Calculate trust score
-    
+
     Returns dict with verification result matching TrustScoreResult schema.
     """
-    data_mode = "live"
-    fallback_used = False
-    data_freshness = "Real-time"
-    
+    fallback_sources = []  # Track which sources used fallback
+
     # Determine registry from credit ID
     registry = _infer_registry(credit_id)
     project_url = _build_project_url(credit_id, registry)
-    
+
     if not project_url:
         logger.warning(f"Could not parse valid registry URL from credit_id: {credit_id}")
         return build_unverified_result(credit_id, None, "Unknown Registry", "Unknown")
-    
+
     try:
         # STEP 1: Ground Layer - Fetch Registry Data
         logger.info(f"[Ground Layer] Fetching registry data for {credit_id}")
         registry_client = RegistryClient()
-        
-        ground_data = await registry_client.fetch_project(
+
+        ground_data, ground_fallback = await registry_client.fetch_project(
             project_id=credit_id,
             registry=registry
         )
-        
+
+        if ground_fallback:
+            fallback_sources.append("ground")
+
         if not ground_data:
             logger.warning(f"Ground layer: Project {credit_id} not found in {registry}")
             return build_unverified_result(
@@ -65,70 +66,89 @@ async def verify_single(credit_id: str) -> dict:
                 data_mode="fetch_failed",
                 data_freshness="Registry unavailable"
             )
-        
+
         # STEP 2: Satellite Layer - Fetch NDVI Time Series
         logger.info(f"[Satellite Layer] Fetching NDVI data for {credit_id}")
         gee_client = GEEClient()
-        
+
         # Calculate date range
         start_date = f"{ground_data.vintage_year}-01-01"
         end_date = datetime.now().strftime('%Y-%m-%d')
-        
-        ndvi_timeseries = gee_client.get_ndvi_timeseries(
+
+        ndvi_timeseries, satellite_fallback = await gee_client.get_ndvi_timeseries(
             lat=ground_data.location.latitude,
             lon=ground_data.location.longitude,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
+            project_id=credit_id
         )
-        
+
+        if satellite_fallback:
+            fallback_sources.append("satellite")
+
         if not ndvi_timeseries:
             logger.warning(f"Satellite layer: No NDVI data for {credit_id}")
             return build_unverified_result(
-                credit_id, project_url, ground_data.issuer, ground_data.project_type,
+                credit_id, project_url, ground_data.registry, ground_data.project_type,
                 data_mode="satellite_unavailable",
                 data_freshness="No satellite coverage"
             )
-        
+
         # STEP 3: AI Layer - Predict Carbon
         logger.info(f"[AI Layer] Running carbon estimation for {credit_id}")
         processor = NDVIProcessor()
         ndvi_avg = processor.calculate_average(ndvi_timeseries)
-        
+
         estimator = CarbonEstimator()
-        
+
         # Calculate project age
         project_age = datetime.now().year - ground_data.vintage_year
-        
+
         # Estimate area from claimed carbon (rough heuristic: 10 tCO2/ha)
         estimated_area = ground_data.claimed_co2_tons / 10
-        
+
         # Infer forest type from location (simplified)
         forest_type = _infer_forest_type(ground_data.location.latitude)
-        
+
         ai_prediction = estimator.estimate(
             ndvi_avg=ndvi_avg,
             area_ha=estimated_area,
             forest_type=forest_type,
             age_years=project_age
         )
-        
+
         # STEP 4: Scoring Layer - Calculate Trust Score
         logger.info(f"[Scoring Layer] Calculating trust score for {credit_id}")
         scorer = FraudScorer()
-        
+
         result = scorer.calculate_trust_score(
             ground_data=ground_data,
             satellite_data=ndvi_timeseries,
             ai_prediction=ai_prediction
         )
-        
+
+        # Determine data mode
+        fallback_used = len(fallback_sources) > 0
+        if len(fallback_sources) == 0:
+            data_mode = "live"
+            data_freshness = "Real-time"
+        elif len(fallback_sources) >= 2:
+            data_mode = "cache"
+            data_freshness = f"Cached ({', '.join(fallback_sources)} layers)"
+        else:
+            data_mode = "mixed"
+            data_freshness = f"Mixed (cached: {', '.join(fallback_sources)})"
+
+        # Get proper registry name
+        registry_name = ground_data.registry
+
         # Convert to API response format (maintain existing contract)
         api_response = {
             "creditId": credit_id,
             "trustScore": result.trust_score,
             "verdict": result.verdict,
             "category": ground_data.project_type,
-            "issuer": ground_data.registry,
+            "issuer": registry_name,
             "vintage": ground_data.vintage_year,
             "co2Equivalent": int(ground_data.claimed_co2_tons),
             "checks": [
@@ -153,7 +173,7 @@ async def verify_single(credit_id: str) -> dict:
         try:
             await save_verification_to_db(
                 api_response,
-                json.dumps(ndvi_timeseries[0].dict() if ndvi_timeseries else {}),
+                json.dumps(ndvi_timeseries[0].model_dump() if ndvi_timeseries else {}, default=str),
                 ground_data.project_type,
                 ground_data.registry,
                 ground_data.registry_url
@@ -403,7 +423,7 @@ async def save_verification_to_db(result: dict, external_data: str, category: st
                 "checks": result["checks"],
                 "fraud_risks": result["fraudRisks"],
                 "verified_at": result["verifiedAt"]
-            }),
+            }, default=str),
             "computed_at": datetime.utcnow().isoformat()
         }
 
@@ -434,12 +454,24 @@ async def save_verification_to_db(result: dict, external_data: str, category: st
             "refreshed_at": datetime.utcnow().isoformat()
         }
 
-        db_client.client.table("leaderboard_cache").upsert(
-            leaderboard_data,
-            on_conflict="project_id"
-        ).execute()
-
-        logger.info(f"Updated leaderboard cache for {credit_id}")
+        # Try to update leaderboard cache - handle missing UNIQUE constraint gracefully
+        try:
+            # Try upsert first (will work if UNIQUE constraint exists)
+            db_client.client.table("leaderboard_cache").upsert(
+                leaderboard_data,
+                on_conflict="project_id"
+            ).execute()
+            logger.info(f"Updated leaderboard cache for {credit_id}")
+        except Exception as upsert_error:
+            if "unique" in str(upsert_error).lower() or "constraint" in str(upsert_error).lower():
+                # UNIQUE constraint doesn't exist, try simple insert instead
+                try:
+                    db_client.client.table("leaderboard_cache").insert(leaderboard_data).execute()
+                    logger.info(f"Inserted into leaderboard cache for {credit_id}")
+                except Exception as insert_error:
+                    logger.warning(f"Failed leaderboard cache update for {credit_id}: {insert_error}")
+            else:
+                logger.error(f"Failed to update leaderboard_cache: {upsert_error}")
 
     except Exception as e:
-        logger.error(f"Failed to update leaderboard_cache: {e}")
+        logger.error(f"Error in leaderboard cache update process: {e}")

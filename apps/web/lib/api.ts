@@ -63,9 +63,7 @@ export async function verifyCreditId(
 ): Promise<TrustScoreResult> {
   if (!API_BASE) {
     logApiCall('/api/verify', true);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(getMockResult(creditId)), 1500);
-    });
+    throw new Error('API_BASE not configured. Please set NEXT_PUBLIC_API_URL in .env.local');
   }
 
   try {
@@ -88,16 +86,14 @@ export async function verifyCreditId(
     logApiCall('/api/verify', false);
     return data;
   } catch (error) {
-    console.warn("API call failed, falling back to mock data", error);
+    console.error("API call failed:", error);
     logApiCall('/api/verify', true, error);
-    
-    // If it's a timeout, throw it to show proper error to user
-    if (error instanceof Error && error.message.includes('timeout')) {
+
+    // Always throw the error so UI can show proper error state
+    if (error instanceof Error) {
       throw error;
     }
-    
-    // For other errors, fallback to mock
-    return getMockResult(creditId);
+    throw new Error('Verification request failed');
   }
 }
 
@@ -106,9 +102,7 @@ export async function verifyBulkCredits(
 ): Promise<BulkVerifyResult> {
   if (!API_BASE) {
     logApiCall('/api/verify/bulk', true);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(getMockBulkResults(creditIds)), 2500);
-    });
+    throw new Error('API_BASE not configured. Please set NEXT_PUBLIC_API_URL in .env.local');
   }
 
   try {
@@ -134,16 +128,14 @@ export async function verifyBulkCredits(
     logApiCall('/api/verify/bulk', false);
     return data;
   } catch (error) {
-    console.warn("API call failed, falling back to mock data", error);
+    console.error("Bulk API call failed:", error);
     logApiCall('/api/verify/bulk', true, error);
-    
-    // If it's a timeout, throw it to show proper error to user
-    if (error instanceof Error && error.message.includes('timeout')) {
+
+    // Always throw the error so UI can show proper error state
+    if (error instanceof Error) {
       throw error;
     }
-    
-    // For other errors, fallback to mock
-    return getMockBulkResults(creditIds);
+    throw new Error('Bulk verification request failed');
   }
 }
 
@@ -153,9 +145,7 @@ export async function getLeaderboard(
 ): Promise<LeaderboardEntry[]> {
   if (!API_BASE) {
     logApiCall('/api/leaderboard', true);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(getMockLeaderboard(category, limit)), 800);
-    });
+    throw new Error('API_BASE not configured. Please set NEXT_PUBLIC_API_URL in .env.local');
   }
 
   try {
@@ -179,9 +169,14 @@ export async function getLeaderboard(
     logApiCall('/api/leaderboard', false);
     return data;
   } catch (error) {
-    console.warn("API call failed, falling back to mock data", error);
+    console.error("Leaderboard API call failed:", error);
     logApiCall('/api/leaderboard', true, error);
-    return getMockLeaderboard(category, limit);
+
+    // Always throw the error so UI can show proper error state
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Leaderboard request failed');
   }
 }
 

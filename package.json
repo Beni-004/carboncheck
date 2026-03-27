@@ -1,0 +1,29 @@
+{
+  "name": "carboncheck",
+  "version": "1.0.0",
+  "description": "CarbonCheck - Carbon Credit Verification Platform",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd apps/web && npm install",
+    "install:frontend": "cd apps/web && npm install",
+    "install:backend": "cd backend && python -m venv venv && ./venv/bin/pip install -r requirements.txt",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && source venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "cd apps/web && npm run dev",
+    "build": "cd apps/web && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && source venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "start:frontend": "cd apps/web && npm start",
+    "lint": "cd apps/web && npm run lint",
+    "setup": "npm run install:all && npm run install:backend",
+    "backend:test": "cd backend && source venv/bin/activate && pytest",
+    "clean": "rm -rf apps/web/.next apps/web/node_modules node_modules backend/venv backend/__pycache__ backend/app/__pycache__"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

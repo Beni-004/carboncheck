@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     
     # External API Timeouts (seconds)
-    external_api_timeout: int = 3
+    # Increased to accommodate slower registry scraping and satellite data operations
+    external_api_timeout: int = 15
     
     # Bulk verification limits
     bulk_verify_max_ids: int = 50

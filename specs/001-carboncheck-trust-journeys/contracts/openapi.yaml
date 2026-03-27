@@ -3,7 +3,8 @@ info:
   title: CarbonCheck API
   version: 0.1.0
   description: |
-    Trust scoring and public leaderboard API.
+    Four-layer verification and public leaderboard API.
+    Verification flow: Ground -> Satellite -> AI -> Scoring.
     Design constraints:
     - External API timeout per source: 3 seconds
     - Supabase cache fallback when upstream source fails
@@ -23,7 +24,7 @@ paths:
       summary: Verify one or many carbon credit IDs
       description: |
         Accepts 1-50 project IDs for verification.
-        Returns deterministic score breakdown over four checks.
+        Returns deterministic check breakdown with four-layer evidence.
         Supports cache fallback when external sources timeout (3s limit).
       operationId: verifyCredits
       requestBody:
@@ -64,14 +65,21 @@ paths:
                         fallback_used: false
                         data_mode: "live"
                         source_provenance:
-                          - source_name: "Ember"
+                          - layer: "ground"
+                            source_name: "Registry"
                             fetched_at: "2024-03-24T10:30:00Z"
                             freshness_state: "live"
                             cache_age_seconds: null
-                          - source_name: "CEA"
+                          - layer: "satellite"
+                            source_name: "Earth-Engine"
                             fetched_at: "2024-03-24T10:30:01Z"
                             freshness_state: "live"
                             cache_age_seconds: null
+                        layer_evidence:
+                          ground_summary: "Registry metadata and claimed CO2 matched canonical record"
+                          satellite_summary: "NDVI time-series retrieved from Earth Engine without fallback"
+                          ai_summary: "Model estimate produced expected CO2 range with moderate uncertainty"
+                          scoring_summary: "Fixed-weight checks produced WARNING verdict"
                         computed_at: "2024-03-24T10:30:02Z"
                         rank_in_batch: null
                     errors: []
@@ -91,16 +99,23 @@ paths:
                           permanence_risk: 15.0
                           double_counting: 10.0
                         fallback_used: true
-                        data_mode: "cached"
+                        data_mode: "cache"
                         source_provenance:
-                          - source_name: "Ember"
+                          - layer: "ground"
+                            source_name: "Supabase-Cache"
                             fetched_at: "2024-03-23T14:20:00Z"
-                            freshness_state: "cached"
+                            freshness_state: "cache"
                             cache_age_seconds: 72600
-                          - source_name: "CEA"
+                          - layer: "satellite"
+                            source_name: "Supabase-Cache"
                             fetched_at: "2024-03-23T14:20:00Z"
-                            freshness_state: "cached"
+                            freshness_state: "cache"
                             cache_age_seconds: 72600
+                        layer_evidence:
+                          ground_summary: "Ground layer served from cached registry snapshot"
+                          satellite_summary: "Satellite layer served from cached NDVI snapshot"
+                          ai_summary: "AI estimate reused deterministic cached features"
+                          scoring_summary: "Final score computed with cache provenance flags"
                         computed_at: "2024-03-24T10:30:02Z"
                         rank_in_batch: null
                     errors: []
@@ -122,10 +137,16 @@ paths:
                         fallback_used: false
                         data_mode: "live"
                         source_provenance:
-                          - source_name: "Ember"
+                          - layer: "ground"
+                            source_name: "Registry"
                             fetched_at: "2024-03-24T10:30:00Z"
                             freshness_state: "live"
                             cache_age_seconds: null
+                        layer_evidence:
+                          ground_summary: "Ground metadata available for project"
+                          satellite_summary: "Satellite signal suggests weak vegetation trend"
+                          ai_summary: "AI anomaly detector flagged pattern as unusual"
+                          scoring_summary: "Combined checks produced FAIL"
                         computed_at: "2024-03-24T10:30:02Z"
                         rank_in_batch: 1
                     errors:
@@ -372,24 +393,46 @@ components:
     SourceProvenance:
       type: object
       additionalProperties: false
-      required: [source_name, fetched_at, freshness_state, cache_age_seconds]
+      required: [layer, source_name, fetched_at, freshness_state, cache_age_seconds]
       properties:
+        layer:
+          type: string
+          enum: [ground, satellite, ai, scoring]
+          description: Verification layer emitting this provenance record
         source_name:
           type: string
           description: Name of external data source
-          enum: [Ember, CEA, Grid-India, REC-Registry]
+          enum: [Registry, Project-Documents, Earth-Engine, Supabase-Cache, AI-Model, Scoring-Policy]
         fetched_at:
           type: string
           format: date-time
           description: Timestamp when data was fetched from source
         freshness_state:
           type: string
-          enum: [live, cached]
+          enum: [live, cache, stale, mixed]
           description: Whether data is fresh from API or fallback cache
         cache_age_seconds:
           type: integer
           nullable: true
           description: Age of cached data in seconds (null if live)
+
+    LayerEvidence:
+      type: object
+      additionalProperties: false
+      required: [ground_summary, satellite_summary, ai_summary, scoring_summary]
+      properties:
+        ground_summary:
+          type: string
+          description: Ground Layer evidence summary
+        satellite_summary:
+          type: string
+          description: Satellite Layer evidence summary
+        ai_summary:
+          type: string
+          description: AI Layer evidence summary
+        scoring_summary:
+          type: string
+          description: Scoring Layer rationale summary
 
     TrustScoreResult:
       type: object
@@ -402,6 +445,7 @@ components:
         - fallback_used
         - data_mode
         - source_provenance
+        - layer_evidence
         - computed_at
         - rank_in_batch
       properties:
@@ -415,8 +459,8 @@ components:
           description: Total trust score (0-100)
         verdict:
           type: string
-          enum: [FAIL, WARNING, PASS]
-          description: "Overall verdict: FAIL (<40), WARNING (40-69), PASS (>=70)"
+          enum: [FAIL, WARNING, PASS, UNVERIFIED]
+          description: "Overall verdict: FAIL (<40), WARNING (40-69), PASS (>=70), UNVERIFIED (insufficient evidence)"
         score_breakdown:
           $ref: '#/components/schemas/ScoreBreakdown'
         fallback_used:
@@ -424,13 +468,15 @@ components:
           description: True if any source used cached data due to timeout/failure
         data_mode:
           type: string
-          enum: [live, cached, partial]
-          description: "Data freshness: live (all fresh), cached (all cached), partial (mixed)"
+          enum: [live, mixed, cache]
+          description: "Data freshness: live (all live), mixed (live+cache blend), cache (all cache)"
         source_provenance:
           type: array
           items:
             $ref: '#/components/schemas/SourceProvenance'
           description: Provenance tracking for all external sources used
+        layer_evidence:
+          $ref: '#/components/schemas/LayerEvidence'
         computed_at:
           type: string
           format: date-time
@@ -517,7 +563,7 @@ components:
           description: Total trust score (0-100)
         verdict:
           type: string
-          enum: [FAIL, WARNING, PASS]
+          enum: [FAIL, WARNING, PASS, UNVERIFIED]
           description: Overall verdict
         registry_name:
           type: string

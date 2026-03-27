@@ -1,79 +1,112 @@
 # Quickstart - CarbonCheck Trust Journeys
 
 ## Goal
-Validate end-to-end behavior for single verify, bulk verify, leaderboard, health, and forced fallback mode without returning HTTP 500.
+Stand up and validate the four-layer verification engine (Ground, Satellite, AI, Scoring) behind existing API journeys: single verify, bulk verify, public leaderboard, and health.
 
-## End-to-End Data Flow
-1. User/client submits credit ID input to POST /api/verify.
-2. API validates payload shape:
-   - single mode: credit_id present
-   - bulk mode: credit_ids array length 1..50
-3. API normalizes IDs and assigns request_id.
-4. For each required external source (Ember, CEA, Grid-India, REC Registry):
-   - call with strict 3-second timeout
-   - on timeout/error, fetch latest cache rows from Supabase
-5. API assembles source snapshot and computes per-check values:
-   - baseline_match
-   - additionality
-   - permanence_risk
-   - double_counting
-6. API computes weighted trust_score, verdict, evidence summary, and data_mode (live/mixed/cache).
-7. API upserts latest score result into trust_scores and returns response envelope.
-8. Scheduler refreshes leaderboard_cache every 60 seconds from recent trust_scores.
-9. GET /api/leaderboard serves precomputed rankings from leaderboard_cache.
-10. GET /api/health returns upstream health + cache readiness, always 200 or 503 (never 500).
+## Prerequisites
+- Backend runtime: Python 3.12+
+- Frontend runtime: Node.js compatible with Next.js 14 workspace
+- Supabase project configured for cache and verification persistence
+- Google Earth Engine credentials available for Satellite Layer
 
-## Fallback Contract
-- Every external API call timeout: 3 seconds hard limit.
-- Fallback precedence: live source -> Supabase cache -> UNSCORED domain response.
-- HTTP 500 is disallowed. Unhandled exceptions must map to structured 503/422/429 responses.
+## Backend Dependency Update
+Update backend dependencies to include starter-kit layer packages:
 
-## Verify Endpoint Examples
+```txt
+pdfplumber==0.10.3
+beautifulsoup4==4.12.3
+lxml==5.1.0
+earthengine-api==0.1.384
+rasterio==1.3.9
+geopandas==0.14.2
+shapely==2.0.2
+torch==2.1.2
+torchvision==0.16.2
+torchgeo==0.5.1
+scikit-learn==1.4.0
+xgboost==2.0.3
+pyod==1.1.3
+pandas==2.1.4
+numpy==1.26.3
+redis==5.0.1
+pillow==10.2.0
+pyproj==3.6.1
+```
 
-### Single ID
+## Environment Variables
+
+```bash
+# Existing
+SUPABASE_URL=...
+SUPABASE_KEY=...
+
+# New for satellite/AI flows
+GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/service-account-key.json
+GEE_PROJECT=your-gee-project-id
+VERIFICATION_CACHE_TTL_SECONDS=86400
+VERIFY_SOURCE_TIMEOUT_SECONDS=3
+```
+
+## Layered Execution Flow
+1. `POST /api/verify` receives one ID or up to 50 IDs.
+2. Ground Layer fetches/normalizes registry records and extracts claim context from project documents.
+3. Satellite Layer fetches NDVI time series from Earth Engine (or cache fallback).
+4. AI Layer estimates expected CO2, computes uncertainty, and runs anomaly scoring.
+5. Scoring Layer computes check-level evidence, final Trust Score, and verdict.
+6. API returns layered provenance metadata and stores deterministic run snapshots.
+7. Leaderboard refresh job builds ranked public snapshots from recent verification runs.
+
+## Verification Commands
+
+### Single verification
 ```bash
 curl -s -X POST "$API_BASE/api/verify" \
-  -H 'Content-Type: application/json' \
-  -d '{"credit_id":"REC-IN-2024-001"}'
+   -H 'Content-Type: application/json' \
+   -d '{"project_ids":["VCS-191"]}'
 ```
 
 Expected:
 - HTTP 200
-- one result item with four-check breakdown
-- verdict + trust_score + fallback_used flag
+- one result item with check breakdown, layered evidence, `fallback_used`, and `data_mode`
+- end-to-end response under 5 seconds p95 under expected load
 
-### Bulk (50 IDs max)
+### Bulk verification
 ```bash
 curl -s -X POST "$API_BASE/api/verify" \
-  -H 'Content-Type: application/json' \
-  -d '{"credit_ids":["REC-IN-2024-001","REC-IN-2024-002"]}'
+   -H 'Content-Type: application/json' \
+   -d '{"project_ids":["VCS-191","VCS-215","GS-1021"]}'
 ```
 
 Expected:
 - HTTP 200
-- ranked results by risk severity
-- per-item error for invalid IDs, without failing valid IDs
+- ranked results (highest risk first)
+- invalid IDs reported per item without failing valid items
 
-## Leaderboard
+### Leaderboard
 ```bash
-curl -s "$API_BASE/api/leaderboard?credit_type=Forestry&limit=10"
+curl -s "$API_BASE/api/leaderboard?project_type=forestry&limit=10"
 ```
 
 Expected:
 - HTTP 200
-- ranked entries with category, flagged_count_24h, freshness_state
+- publicly accessible rankings with evidence snippet and freshness state
 
-## Health
+### Health
 ```bash
 curl -s "$API_BASE/api/health"
 ```
 
 Expected:
-- HTTP 200 (healthy/degraded) or 503 (critical dependency unavailable)
-- machine-readable upstream and cache status
+- HTTP 200 for healthy/degraded service, HTTP 503 for critical dependency loss
+- no HTTP 500 in expected failure paths
+
+## Fallback and Determinism Validation
+1. Simulate upstream timeout for registry or satellite source.
+2. Re-run `POST /api/verify` and confirm `fallback_used=true` with `data_mode` in `mixed|cache`.
+3. Re-run identical request against unchanged snapshots and confirm same `trust_score` and `verdict`.
 
 ## Demo Smoke Checklist
-- Known risky single ID returns FAIL in <5s.
-- Bulk request returns ranked output with stable ordering.
-- Leaderboard visible with no auth.
-- Forced upstream timeout still returns non-500 response using cache fallback.
+- Risky known sample returns WARNING/FAIL with clear evidence in under 5 seconds.
+- Bulk call with mixed validity returns full ranked valid set and explicit invalid errors.
+- Leaderboard renders without authentication and refreshes against latest snapshot.
+- Outage simulation still returns non-500, provenance-marked responses.

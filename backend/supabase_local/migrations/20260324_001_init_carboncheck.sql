@@ -1,9 +1,7 @@
 -- CarbonCheck Initial Schema Migration
 -- Tables: carbon_credits, trust_scores, leaderboard_cache
 -- Purpose: Rigid schema for credit verification, scoring, and public leaderboard
-
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- FIX: Replaced uuid_generate_v4() with gen_random_uuid() (no extension needed, Postgres 13+)
 
 -- Ensure we're working in the public schema
 SET search_path TO public;
@@ -19,7 +17,7 @@ DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 -- Table: carbon_credits
 -- Stores registry credit data with provenance tracking
 CREATE TABLE carbon_credits (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id TEXT NOT NULL UNIQUE,
     registry_name TEXT NOT NULL,
     project_type TEXT NOT NULL CHECK (project_type IN ('forestry', 'renewable', 'soil', 'other')),
@@ -40,7 +38,7 @@ CREATE INDEX idx_carbon_credits_fetched_at ON carbon_credits(fetched_at);
 -- Table: trust_scores
 -- Stores computed trust scores with 4-component breakdown and audit trail
 CREATE TABLE trust_scores (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id TEXT NOT NULL,
     total_score NUMERIC(5, 2) NOT NULL CHECK (total_score >= 0 AND total_score <= 100),
     baseline_match_score NUMERIC(5, 2) NOT NULL CHECK (baseline_match_score >= 0 AND baseline_match_score <= 25),
@@ -65,8 +63,8 @@ CREATE INDEX idx_trust_scores_computed_at ON trust_scores(computed_at DESC);
 -- Table: leaderboard_cache
 -- Materialized view for public leaderboard with category filtering
 CREATE TABLE leaderboard_cache (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    project_id TEXT NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id TEXT NOT NULL UNIQUE,
     project_type TEXT NOT NULL CHECK (project_type IN ('forestry', 'renewable', 'soil', 'other')),
     total_score NUMERIC(5, 2) NOT NULL CHECK (total_score >= 0 AND total_score <= 100),
     verdict TEXT NOT NULL CHECK (verdict IN ('FAIL', 'WARNING', 'PASS')),
@@ -82,6 +80,21 @@ CREATE INDEX idx_leaderboard_cache_project_type ON leaderboard_cache(project_typ
 CREATE INDEX idx_leaderboard_cache_rank_overall ON leaderboard_cache(rank_overall);
 CREATE INDEX idx_leaderboard_cache_rank_in_category ON leaderboard_cache(rank_in_category);
 CREATE INDEX idx_leaderboard_cache_refreshed_at ON leaderboard_cache(refreshed_at DESC);
+
+-- Table: verification_cache
+-- Cache for ground and satellite layer data to provide fallback when external APIs fail
+CREATE TABLE verification_cache (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id TEXT NOT NULL,
+    layer TEXT NOT NULL CHECK (layer IN ('ground', 'satellite')),
+    data JSONB NOT NULL,
+    cached_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(project_id, layer)
+);
+
+CREATE INDEX idx_verification_cache_project_id ON verification_cache(project_id);
+CREATE INDEX idx_verification_cache_layer ON verification_cache(layer);
+CREATE INDEX idx_verification_cache_cached_at ON verification_cache(cached_at DESC);
 
 -- Function: Update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
