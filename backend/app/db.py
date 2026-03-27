@@ -5,8 +5,14 @@ Provides async connection pooling and query helpers.
 
 import os
 from typing import Optional
+from pathlib import Path
 from supabase import create_client, Client
 import logging
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
 
 logger = logging.getLogger(__name__)
 

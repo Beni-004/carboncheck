@@ -1,15 +1,18 @@
 """
 Verification Service
-Real credit verification logic with external API calls.
-No mock data or database fallback - only real HTTP fetching.
+Real credit verification logic with external API calls and database persistence.
+
 """
 
 import httpx
 import asyncio
 import logging
 import re
+import hashlib
+import json
 from typing import Optional
 from datetime import datetime
+from app.db import get_db_client
 
 logger = logging.getLogger(__name__)
 
@@ -98,12 +101,12 @@ async def verify_single(credit_id: str) -> dict:
     # Parse external data and compute real trust score
     trust_score = parse_and_score(credit_id, external_data)
     verdict = compute_verdict(trust_score)
-    
+
     # Generate checks based on actual data analysis
     checks = generate_fraud_checks(credit_id, external_data, trust_score)
     fraud_risks = generate_fraud_risks(trust_score)
-    
-    return {
+
+    result = {
         "creditId": credit_id,
         "trustScore": trust_score,
         "verdict": verdict,
@@ -119,6 +122,15 @@ async def verify_single(credit_id: str) -> dict:
         "dataFreshness": data_freshness,
         "projectUrl": project_url
     }
+
+    # Save to database (non-blocking, best effort)
+    try:
+        await save_verification_to_db(result, external_data, category, issuer, project_url)
+    except Exception as e:
+        logger.warning(f"Failed to save verification to database: {e}")
+        # Continue even if database save fails
+
+    return result
 
 
 async def verify_bulk(credit_ids: list[str]) -> dict:
@@ -296,7 +308,7 @@ def generate_fraud_checks(credit_id: str, external_data: str, trust_score: int) 
 def generate_fraud_risks(trust_score: int) -> list:
     """Generate fraud risk warnings based on score."""
     risks = []
-    
+
     if trust_score < 40 and trust_score > 0:
         risks.append({
             "category": "Low Trust Score",
@@ -304,7 +316,7 @@ def generate_fraud_risks(trust_score: int) -> list:
             "description": "Credit failed multiple verification checks",
             "evidence": "Trust score below acceptable threshold"
         })
-    
+
     if trust_score < 70 and trust_score >= 40:
         risks.append({
             "category": "Moderate Risk",
@@ -312,5 +324,117 @@ def generate_fraud_risks(trust_score: int) -> list:
             "description": "Some verification checks raised concerns",
             "evidence": "Further due diligence recommended before purchase"
         })
-    
+
     return risks
+
+
+async def save_verification_to_db(result: dict, external_data: str, category: str, issuer: str, project_url: Optional[str]):
+    """
+    Save verification result to Supabase database.
+    Saves to carbon_credits, trust_scores, and updates leaderboard_cache.
+    """
+    db_client = get_db_client()
+    credit_id = result["creditId"]
+    trust_score = result["trustScore"]
+    verdict = result["verdict"]
+
+    # Map category to project_type
+    category_to_type = {
+        "Renewable Energy": "renewable",
+        "Forestry": "forestry",
+        "Landfill Gas": "soil",
+        "Methane": "other",
+        "Soil Carbon": "soil",
+        "Unknown": "other"
+    }
+    project_type = category_to_type.get(category, "other")
+
+    # Create source snapshot hash for deterministic scoring
+    source_hash = hashlib.sha256(external_data.encode()).hexdigest()[:16]
+
+    # 1. Insert/Update carbon_credits
+    try:
+        carbon_credit_data = {
+            "project_id": credit_id,
+            "registry_name": issuer,
+            "project_type": project_type,
+            "claimed_tco2": result.get("co2Equivalent", 1000),
+            "is_mandated": False,
+            "vintage_year": result.get("vintage", 2023),
+            "registry_url": project_url,
+            "fetched_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+
+        # Try to insert, or update if already exists
+        db_client.client.table("carbon_credits").upsert(
+            carbon_credit_data,
+            on_conflict="project_id"
+        ).execute()
+
+        logger.info(f"Saved carbon credit {credit_id} to database")
+    except Exception as e:
+        logger.error(f"Failed to save carbon_credit: {e}")
+
+    # 2. Insert trust_scores
+    try:
+        # Extract individual check scores
+        checks_dict = {check["name"]: check["score"] for check in result["checks"]}
+
+        trust_score_data = {
+            "project_id": credit_id,
+            "total_score": trust_score,
+            "baseline_match_score": checks_dict.get("Baseline Match", 0),
+            "additionality_score": checks_dict.get("Additionality", 0),
+            "permanence_risk_score": checks_dict.get("Permanence Risk", 0),
+            "double_counting_score": checks_dict.get("Double Counting", 0),
+            "verdict": verdict,
+            "fallback_used": result.get("fallbackUsed", False),
+            "data_mode": result.get("dataMode", "live"),
+            "source_snapshot_hash": source_hash,
+            "audit_trail": json.dumps({
+                "checks": result["checks"],
+                "fraud_risks": result["fraudRisks"],
+                "verified_at": result["verifiedAt"]
+            }),
+            "computed_at": datetime.utcnow().isoformat()
+        }
+
+        db_client.client.table("trust_scores").insert(trust_score_data).execute()
+        logger.info(f"Saved trust score for {credit_id} to database")
+
+    except Exception as e:
+        logger.error(f"Failed to save trust_score: {e}")
+
+    # 3. Update leaderboard_cache
+    try:
+        # Get current rank by counting credits with lower scores
+        rank_result = db_client.client.table("trust_scores").select(
+            "total_score",
+            count="exact"
+        ).lt("total_score", trust_score).execute()
+
+        rank = rank_result.count + 1 if rank_result.count else 1
+
+        leaderboard_data = {
+            "project_id": credit_id,
+            "project_type": project_type,
+            "total_score": trust_score,
+            "verdict": verdict,
+            "registry_name": issuer,
+            "claimed_tco2": result.get("co2Equivalent", 1000),
+            "rank_overall": rank,
+            "rank_in_category": rank,  # Simplified - could calculate category-specific rank
+            "refreshed_at": datetime.utcnow().isoformat()
+        }
+
+        # Upsert to leaderboard_cache
+        db_client.client.table("leaderboard_cache").upsert(
+            leaderboard_data,
+            on_conflict="project_id"
+        ).execute()
+
+        logger.info(f"Updated leaderboard cache for {credit_id}")
+
+    except Exception as e:
+        logger.error(f"Failed to update leaderboard_cache: {e}")
