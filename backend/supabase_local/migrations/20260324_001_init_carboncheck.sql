@@ -8,10 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Ensure we're working in the public schema
 SET search_path TO public;
 
--- Drop existing triggers first (before dropping function)
-DROP TRIGGER IF EXISTS update_carbon_credits_updated_at ON carbon_credits;
-
--- Drop existing tables if they exist (for clean reset)
+-- Drop existing tables if they exist (CASCADE will drop triggers and dependencies)
 DROP TABLE IF EXISTS leaderboard_cache CASCADE;
 DROP TABLE IF EXISTS trust_scores CASCADE;
 DROP TABLE IF EXISTS carbon_credits CASCADE;
