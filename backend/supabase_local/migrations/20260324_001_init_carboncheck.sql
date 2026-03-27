@@ -10,8 +10,8 @@ DROP TABLE IF EXISTS leaderboard_cache CASCADE;
 DROP TABLE IF EXISTS trust_scores CASCADE;
 DROP TABLE IF EXISTS carbon_credits CASCADE;
 
--- Drop existing functions if they exist
-DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+-- Drop existing functions if they exist (CASCADE will drop dependent triggers)
+DROP FUNCTION IF EXISTS update_updated_at_column CASCADE;
 
 -- Table: carbon_credits
 -- Stores registry credit data with provenance tracking
@@ -84,7 +84,7 @@ CREATE INDEX idx_leaderboard_cache_refreshed_at ON leaderboard_cache(refreshed_a
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at := NOW();
+    NEW.updated_at = NOW();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
