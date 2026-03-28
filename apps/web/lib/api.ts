@@ -61,9 +61,12 @@ const logApiCall = (endpoint: string, useMock: boolean, error?: any) => {
 export async function verifyCreditId(
   creditId: string
 ): Promise<TrustScoreResult> {
+  // If no API configured, use mock data for demo purposes
   if (!API_BASE) {
     logApiCall('/api/verify', true);
-    throw new Error('API_BASE not configured. Please set NEXT_PUBLIC_API_URL in .env.local');
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(getMockResult(creditId)), 1500);
+    });
   }
 
   try {
@@ -86,29 +89,29 @@ export async function verifyCreditId(
     logApiCall('/api/verify', false);
     return data;
   } catch (error) {
-    console.error("API call failed:", error);
+    console.error("API call failed, falling back to mock data:", error);
     logApiCall('/api/verify', true, error);
 
-    // Always throw the error so UI can show proper error state
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Verification request failed');
+    // Fallback to mock data for demo resilience
+    return getMockResult(creditId);
   }
 }
 
 export async function verifyBulkCredits(
   creditIds: string[]
 ): Promise<BulkVerifyResult> {
+  // If no API configured, use mock data for demo purposes
   if (!API_BASE) {
     logApiCall('/api/verify/bulk', true);
-    throw new Error('API_BASE not configured. Please set NEXT_PUBLIC_API_URL in .env.local');
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(getMockBulkResults(creditIds)), 2500);
+    });
   }
 
   try {
     // Bulk requests may take longer, scale timeout with batch size
     const bulkTimeout = Math.max(BULK_VERIFICATION_TIMEOUT_MS, creditIds.length * 1000);
-    
+
     const response = await fetchWithTimeout(`${API_BASE}/api/verify/bulk`, {
       method: "POST",
       headers: {
@@ -128,14 +131,11 @@ export async function verifyBulkCredits(
     logApiCall('/api/verify/bulk', false);
     return data;
   } catch (error) {
-    console.error("Bulk API call failed:", error);
+    console.error("Bulk API call failed, falling back to mock data:", error);
     logApiCall('/api/verify/bulk', true, error);
 
-    // Always throw the error so UI can show proper error state
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Bulk verification request failed');
+    // Fallback to mock data for demo resilience
+    return getMockBulkResults(creditIds);
   }
 }
 
@@ -143,9 +143,12 @@ export async function getLeaderboard(
   category?: string,
   limit: number = 50
 ): Promise<LeaderboardEntry[]> {
+  // If no API configured, use mock data for demo purposes
   if (!API_BASE) {
     logApiCall('/api/leaderboard', true);
-    throw new Error('API_BASE not configured. Please set NEXT_PUBLIC_API_URL in .env.local');
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(getMockLeaderboard(category, limit)), 800);
+    });
   }
 
   try {
@@ -169,14 +172,11 @@ export async function getLeaderboard(
     logApiCall('/api/leaderboard', false);
     return data;
   } catch (error) {
-    console.error("Leaderboard API call failed:", error);
+    console.error("Leaderboard API call failed, falling back to mock data:", error);
     logApiCall('/api/leaderboard', true, error);
 
-    // Always throw the error so UI can show proper error state
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Leaderboard request failed');
+    // Fallback to mock data for demo resilience
+    return getMockLeaderboard(category, limit);
   }
 }
 

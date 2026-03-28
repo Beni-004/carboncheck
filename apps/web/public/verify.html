@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarbonChain — Enterprise Carbon Credit Verification | SaaS Platform</title>
+<meta name="description" content="AI-powered fraud detection for carbon credits. Verify, track, and manage certified carbon offsets with enterprise-grade security.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0f0d;
+    --paper: #f0ede6;
+    --moss: #2d4a2f;
+    --acid: #b8ff57;
+    --rust: #c94b2a;
+    --fog: #8a9e8c;
+    --dim: rgba(10,15,13,0.6);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  .cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--acid);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--acid);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform 0.12s ease-out, width 0.25s, height 0.25s, opacity 0.2s;
+    mix-blend-mode: difference;
+    opacity: 0.6;
+  }
+
+  section {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #hero {
+    background: #000;
+  }
+
+  #hero-video {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.45;
+    z-index: 0;
+  }
+
+  #video-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    background: radial-gradient(ellipse at 30% 60%, #1a3320 0%, #000 70%);
+  }
+
+  #video-placeholder .upload-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    opacity: 0.25;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--acid);
+    cursor: pointer;
+    transition: opacity 0.3s;
+  }
+  #video-placeholder .upload-hint:hover { opacity: 0.55; }
+  #video-placeholder svg { width: 48px; height: 48px; stroke: var(--acid); fill: none; stroke-width: 1.5; }
+
+  #video-input { display: none; }
+
+  .noise {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0.035;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px;
+  }
+
+  .vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.75) 100%);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    padding: 6rem 7vw 4rem;
+    max-width: 1200px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--acid);
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.3s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 13vw, 14rem);
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    color: var(--paper);
+    margin-bottom: 0.15em;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.5s forwards;
+  }
+
+  .hero-title span {
+    color: var(--acid);
+    display: block;
+  }
+
+  .hero-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 300;
+    color: var(--fog);
+    max-width: 520px;
+    line-height: 1.65;
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.75s forwards;
+  }
+
+  .hero-cta {
+    margin-top: 3.5rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 1s forwards;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .btn-primary {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 1rem 2.5rem;
+    background: var(--acid);
+    color: var(--ink);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-weight: 700;
+    transition: background 0.2s, transform 0.2s;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  .btn-primary:hover { background: #d4ff6e; transform: translateY(-2px); }
+
+  .scroll-hint {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--fog);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .scroll-hint::before {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--fog));
+    animation: scrollPulse 1.6s ease-in-out infinite;
+  }
+
+  .hero-bottom {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 7vw;
+    right: 7vw;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    opacity: 0;
+    animation: fadeIn 1s 1.3s forwards;
+  }
+
+  .hero-stat {
+    text-align: right;
+  }
+  .hero-stat .num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    color: var(--acid);
+    line-height: 1;
+  }
+  .hero-stat .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    color: var(--fog);
+    text-transform: uppercase;
+  }
+
+  .accent-line {
+    position: absolute;
+    right: 7vw;
+    top: 50%;
+    width: 1px;
+    height: 30vh;
+    background: linear-gradient(to bottom, transparent, var(--acid), transparent);
+    z-index: 10;
+    transform: translateY(-50%);
+    opacity: 0.4;
+  }
+
+  #verifier {
+    background: var(--ink);
+    padding: 8rem 7vw;
+    position: relative;
+  }
+
+  #verifier::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(184,255,87,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(184,255,87,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  .verifier-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8vw;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .verifier-intro .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--acid);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .verifier-intro .section-label::after {
+    content: '';
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: var(--acid);
+    opacity: 0.3;
+  }
+
+  .verifier-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 6vw, 6rem);
+    line-height: 0.95;
+    color: var(--paper);
+    margin-bottom: 1.5rem;
+  }
+
+  .verifier-desc {
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--fog);
+    line-height: 1.8;
+    max-width: 380px;
+  }
+
+  .process-steps {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.2rem 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .step:last-child { border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .step-icon {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(184,255,87,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    color: var(--acid);
+  }
+  .step-text { font-size: 0.88rem; color: var(--fog); line-height: 1.6; padding-top: 0.5rem; }
+  .step-text strong { color: var(--paper); font-weight: 500; display: block; margin-bottom: 0.2rem; }
+
+  .verifier-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(184,255,87,0.12);
+    padding: 3rem;
+    position: relative;
+    backdrop-filter: blur(8px);
+  }
+  .verifier-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--acid), transparent);
+  }
+
+  .card-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--acid);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .card-title::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--acid);
+    border-radius: 50%;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+
+  .input-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .input-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fog);
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .credit-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--paper);
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    letter-spacing: 0.08em;
+  }
+  .credit-input::placeholder { color: rgba(255,255,255,0.18); }
+  .credit-input:focus {
+    border-color: var(--acid);
+    background: rgba(184,255,87,0.04);
+  }
+
+  .verify-btn {
+    width: 100%;
+    padding: 1.1rem;
+    background: var(--acid);
+    color: var(--ink);
+    border: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    margin-top: 1.5rem;
+  }
+  .verify-btn:hover { background: #d4ff6e; transform: translateY(-1px); }
+  .verify-btn:active { transform: translateY(0); }
+  .verify-btn.loading { opacity: 0.7; cursor: wait; }
+
+  .spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(10,15,13,0.3);
+    border-top-color: var(--ink);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .loading .spinner { display: block; }
+  .loading .btn-label { display: none; }
+
+  #result-panel {
+    margin-top: 1.75rem;
+    display: none;
+    border: 1px solid;
+    padding: 1.5rem;
+    animation: fadeUp 0.4s forwards;
+  }
+
+  #result-panel.genuine {
+    border-color: rgba(184,255,87,0.4);
+    background: rgba(184,255,87,0.05);
+  }
+  #result-panel.fraud {
+    border-color: rgba(201,75,42,0.4);
+    background: rgba(201,75,42,0.05);
+  }
+  #result-panel.unknown {
+    border-color: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .result-status {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .genuine .result-status { color: var(--acid); }
+  .fraud .result-status { color: var(--rust); }
+  .unknown .result-status { color: var(--fog); }
+
+  .result-badge {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .genuine .result-badge { background: var(--acid); box-shadow: 0 0 8px var(--acid); }
+  .fraud .result-badge { background: var(--rust); box-shadow: 0 0 8px var(--rust); }
+  .unknown .result-badge { background: var(--fog); }
+
+  .result-detail {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fog);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  .result-meta {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .meta-item { font-size: 0.75rem; color: var(--fog); }
+  .meta-item strong { display: block; font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.25rem; color: rgba(255,255,255,0.35); }
+
+  .confidence-bar {
+    margin-top: 1rem;
+  }
+  .confidence-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .confidence-track {
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+  .confidence-fill {
+    height: 100%;
+    background: var(--acid);
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0%;
+  }
+  .fraud .confidence-fill { background: var(--rust); }
+
+  .error-msg {
+    display: none;
+    margin-top: 0.75rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--rust);
+    text-transform: uppercase;
+  }
+
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.5rem 7vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    mix-blend-mode: normal;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+    transition: background 0.3s;
+  }
+  nav.scrolled {
+    background: rgba(10,15,13,0.95);
+    backdrop-filter: blur(12px);
+    padding: 1rem 7vw;
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+    color: var(--paper);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--acid); }
+
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fog);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--acid); }
+
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--acid);
+    z-index: 200;
+    width: 0%;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 8px var(--acid);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(0.8); }
+    50% { opacity: 1; transform: scaleY(1); }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 768px) {
+    .verifier-layout { grid-template-columns: 1fr; }
+    .hero-content { padding: 7rem 5vw 4rem; }
+    nav { padding: 1.2rem 5vw; }
+    nav.scrolled { padding: 0.8rem 5vw; }
+    .nav-links { display: none; }
+    .btn-primary { padding: 0.8rem 2rem; font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div id="progress-bar"></div>
+
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">Carbon<span>Chain</span></a>
+  <ul class="nav-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="#verifier">Try Now</a></li>
+    <li><a href="#">API Docs</a></li>
+  </ul>
+</nav>
+
+<section id="hero">
+  <div class="noise"></div>
+  <div class="vignette"></div>
+
+  <div class="hero-content">
+    <p class="hero-eyebrow">Enterprise Carbon Credit Verification</p>
+    <h1 class="hero-title">
+      Trust the<br>
+      <span>Carbon</span>
+      Market
+    </h1>
+    <p class="hero-subtitle">
+      AI-powered fraud detection and comprehensive verification for carbon credits — ensuring every offset is real, verified, and accountable for enterprises worldwide.
+    </p>
+    <div class="hero-cta">
+      <a href="#verifier" class="btn-primary">Verify Now</a>
+      <div class="scroll-hint">Scroll to verify</div>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div></div>
+    <div class="hero-stat">
+      <div class="num">LIVE</div>
+      <div class="label">Connected to Backend</div>
+    </div>
+  </div>
+
+  <div class="accent-line"></div>
+</section>
+
+<section id="verifier">
+  <div class="verifier-layout">
+
+    <div class="verifier-intro">
+      <div class="section-label">Try Now</div>
+      <h2 class="verifier-heading">
+        Detect<br>
+        Fraud.<br>
+        Instantly.
+      </h2>
+      <p class="verifier-desc">
+        Enter any carbon credit ID. Our model cross-references registry data, satellite imagery analysis, and transactional patterns to return a real-time fraud probability score.
+      </p>
+
+      <div class="process-steps">
+        <div class="step">
+          <div class="step-icon">1</div>
+          <div class="step-text"><strong>Input Credit ID</strong>Enter the unique identifier from the carbon credit registry.</div>
+        </div>
+        <div class="step">
+          <div class="step-icon">2</div>
+          <div class="step-text"><strong>Model Analysis</strong>Cross-reference against multi-source datasets and fraud patterns.</div>
+        </div>
+        <div class="step">
+          <div class="step-icon">3</div>
+          <div class="step-text"><strong>Instant Verdict</strong>Receive a confidence-scored fraud determination in milliseconds.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verifier-card">
+      <div class="card-title">Verification Engine</div>
+
+      <div class="input-group">
+        <label class="input-label">Carbon Credit ID</label>
+        <input
+          type="text"
+          id="creditIdInput"
+          placeholder="e.g., VCS-2024-001"
+          class="credit-input"
+        />
+      </div>
+
+      <button class="verify-btn" id="verifyBtn" onclick="verifyCreditLive()">
+        <div class="spinner"></div>
+        <span class="btn-label">Verify Credit</span>
+      </button>
+
+      <div id="result-panel">
+        <div class="result-status">
+          <div class="result-badge"></div>
+          <span id="resultVerdict"></span>
+        </div>
+        <div class="result-detail" id="resultDetail"></div>
+        <div class="confidence-bar">
+          <div class="confidence-label">
+            <span>Confidence Score</span>
+            <span id="confidenceVal"></span>
+          </div>
+          <div class="confidence-track">
+            <div class="confidence-fill" id="confidenceFill"></div>
+          </div>
+        </div>
+        <div class="result-meta">
+          <div class="meta-item">
+            <strong>Credit ID</strong>
+            <span id="metaId">—</span>
+          </div>
+          <div class="meta-item">
+            <strong>Timestamp</strong>
+            <span id="metaTime">—</span>
+          </div>
+          <div class="meta-item">
+            <strong>Status</strong>
+            <span id="metaStatus">—</span>
+          </div>
+          <div class="meta-item">
+            <strong>Risk Level</strong>
+            <span id="metaRisk">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  // ---- Cursor ----
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { 
+    mx = e.clientX; 
+    my = e.clientY; 
+    cursor.style.left = mx+'px'; 
+    cursor.style.top = my+'px'; 
+  });
+  function animateRing() { 
+    rx += (mx - rx) * 0.14; 
+    ry += (my - ry) * 0.14; 
+    ring.style.left = rx+'px'; 
+    ring.style.top = ry+'px'; 
+    requestAnimationFrame(animateRing); 
+  }
+  animateRing();
+  document.querySelectorAll('a, button, input, label, select').forEach(el => {
+    el.addEventListener('mouseenter', () => { 
+      cursor.style.width='6px'; 
+      cursor.style.height='6px'; 
+      ring.style.width='52px'; 
+      ring.style.height='52px'; 
+      ring.style.opacity='0.9'; 
+    });
+    el.addEventListener('mouseleave', () => { 
+      cursor.style.width='10px'; 
+      cursor.style.height='10px'; 
+      ring.style.width='36px'; 
+      ring.style.height='36px'; 
+      ring.style.opacity='0.6'; 
+    });
+  });
+
+  // ---- Scroll progress + nav ----
+  const progressBar = document.getElementById('progress-bar');
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+    progressBar.style.width = pct + '%';
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // ---- API Configuration ----
+  const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000'
+    : window.location.origin;
+  
+  console.log('[CarbonCheck Verifier] API Base:', API_BASE);
+
+  // ---- LIVE VERIFICATION ----
+  async function verifyCreditLive() {
+    const creditId = document.getElementById('creditIdInput').value.trim();
+    const panel = document.getElementById('result-panel');
+    const btn = document.getElementById('verifyBtn');
+    const errorMsg = document.querySelector('.error-msg') || document.createElement('div');
+
+    if (!creditId) {
+      alert('Please enter a credit ID');
+      return;
+    }
+
+    panel.style.display = 'none';
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    try {
+      console.log('[CarbonCheck] Verifying credit:', creditId);
+      
+      const response = await fetch(`${API_BASE}/api/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ creditId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[CarbonCheck] Verification result:', data);
+      
+      displayResult(data);
+    } catch (error) {
+      console.error('[CarbonCheck] Verification error:', error);
+      alert('Error verifying credit. Please check your input and try again.');
+      panel.style.display = 'none';
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  function displayResult(data) {
+    const panel = document.getElementById('result-panel');
+    
+    // Determine verdict based on trust_score
+    let verdict = 'unknown';
+    let verdictText = '? UNVERIFIED';
+    let detailText = 'Unable to determine status';
+    let riskLevel = 'Indeterminate';
+    
+    if (data.trust_score >= 75) {
+      verdict = 'genuine';
+      verdictText = '✓ GENUINE';
+      detailText = 'Project verified against registry\nDouble-count check: CLEAR\nBaseline integrity: PASS';
+      riskLevel = 'Low';
+    } else if (data.trust_score < 50) {
+      verdict = 'fraud';
+      verdictText = '✗ SUSPICIOUS';
+      detailText = 'Fraud indicators detected\nRecommended: Manual review';
+      riskLevel = 'High';
+    } else {
+      verdict = 'unknown';
+      verdictText = '? UNDER REVIEW';
+      detailText = 'Additional verification needed\nManual review recommended';
+      riskLevel = 'Medium';
+    }
+
+    panel.className = verdict;
+    panel.style.display = 'block';
+
+    document.getElementById('resultVerdict').textContent = verdictText;
+    document.getElementById('resultDetail').textContent = detailText;
+    document.getElementById('metaId').textContent = data.credit_id;
+    document.getElementById('metaTime').textContent = new Date().toLocaleTimeString();
+    document.getElementById('metaStatus').textContent = data.registry || 'Unknown';
+    document.getElementById('metaRisk').textContent = riskLevel;
+
+    const confidence = Math.round(data.trust_score);
+    document.getElementById('confidenceVal').textContent = confidence + '%';
+    requestAnimationFrame(() => {
+      document.getElementById('confidenceFill').style.width = confidence + '%';
+    });
+  }
+
+  console.log('[CarbonCheck] Frontend initialized - Ready for verification');
+</script>
+</body>
+</html>

@@ -416,454 +416,6 @@
     font-style: normal;
   }
 
-  /* =================== VERIFIER SECTION =================== */
-  #verifier {
-    background: var(--ink);
-    padding: 8rem 7vw;
-    position: relative;
-  }
-
-  /* Grid background */
-  #verifier::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(184,255,87,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(184,255,87,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-  }
-
-  .verifier-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8vw;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-  }
-
-  .verifier-intro .section-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--acid);
-    margin-bottom: 2.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  .verifier-intro .section-label::after {
-    content: '';
-    flex: 1;
-    max-width: 80px;
-    height: 1px;
-    background: var(--acid);
-    opacity: 0.3;
-  }
-
-  .verifier-heading {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(3rem, 6vw, 6rem);
-    line-height: 0.95;
-    color: var(--paper);
-    margin-bottom: 1.5rem;
-  }
-
-  .verifier-desc {
-    font-size: 0.95rem;
-    font-weight: 300;
-    color: var(--fog);
-    line-height: 1.8;
-    max-width: 380px;
-  }
-
-  /* Process steps */
-  .process-steps {
-    margin-top: 3rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-  .step {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-    padding: 1.2rem 0;
-    border-top: 1px solid rgba(255,255,255,0.06);
-  }
-  .step:last-child { border-bottom: 1px solid rgba(255,255,255,0.06); }
-  .step-icon {
-    width: 36px; height: 36px;
-    border: 1px solid rgba(184,255,87,0.3);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    color: var(--acid);
-  }
-  .step-text { font-size: 0.88rem; color: var(--fog); line-height: 1.6; padding-top: 0.5rem; }
-  .step-text strong { color: var(--paper); font-weight: 500; display: block; margin-bottom: 0.2rem; }
-
-  /* ---- VERIFIER CARD ---- */
-  .verifier-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(184,255,87,0.12);
-    padding: 3rem;
-    position: relative;
-    backdrop-filter: blur(8px);
-  }
-  .verifier-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--acid), transparent);
-  }
-
-  .card-title {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.68rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--acid);
-    margin-bottom: 2.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .card-title::before {
-    content: '';
-    width: 8px; height: 8px;
-    background: var(--acid);
-    border-radius: 50%;
-    animation: blink 1.4s ease-in-out infinite;
-  }
-
-  .input-group {
-    margin-bottom: 1.5rem;
-  }
-
-  .input-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.62rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--fog);
-    margin-bottom: 0.75rem;
-    display: block;
-  }
-
-  .credit-input {
-    width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--paper);
-    font-family: 'Space Mono', monospace;
-    font-size: 1rem;
-    padding: 1rem 1.25rem;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s;
-    letter-spacing: 0.08em;
-  }
-  .credit-input::placeholder { color: rgba(255,255,255,0.18); }
-  .credit-input:focus {
-    border-color: var(--acid);
-    background: rgba(184,255,87,0.04);
-  }
-
-  /* =================== PROJECT BROWSER =================== */
-  .browser-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .search-input {
-    width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--paper);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    padding: 1rem 1.25rem;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s;
-    border-radius: 2px;
-  }
-  .search-input::placeholder { color: rgba(255,255,255,0.18); }
-  .search-input:focus {
-    border-color: var(--acid);
-    background: rgba(184,255,87,0.04);
-  }
-
-  .filter-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .filter-select {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--paper);
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
-    padding: 0.75rem 1rem;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s;
-    cursor: pointer;
-    border-radius: 2px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .filter-select:hover, .filter-select:focus {
-    border-color: var(--acid);
-    background: rgba(184,255,87,0.05);
-  }
-  .filter-select option {
-    background: #000;
-    color: var(--paper);
-  }
-
-  .project-browser {
-    max-height: 400px;
-    overflow-y: auto;
-    margin-bottom: 1rem;
-    border: 1px solid rgba(184,255,87,0.1);
-    border-radius: 2px;
-    background: rgba(255,255,255,0.01);
-  }
-
-  .project-list {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .project-item {
-    padding: 1rem;
-    border-bottom: 1px solid rgba(184,255,87,0.08);
-    cursor: pointer;
-    transition: background 0.2s;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-  }
-  .project-item:hover {
-    background: rgba(184,255,87,0.05);
-  }
-  .project-item.selected {
-    background: rgba(184,255,87,0.15);
-    border-left: 3px solid var(--acid);
-  }
-
-  .project-item-content {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .project-item-name {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.85rem;
-    color: var(--acid);
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .project-item-details {
-    font-size: 0.75rem;
-    color: var(--fog);
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .project-item-status {
-    padding: 0.25rem 0.6rem;
-    background: rgba(184,255,87,0.1);
-    border: 1px solid rgba(184,255,87,0.2);
-    border-radius: 2px;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    color: var(--acid);
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .project-item-status.verified {
-    background: rgba(76, 175, 80, 0.1);
-    border-color: rgba(76, 175, 80, 0.2);
-    color: #4caf50;
-  }
-  .project-item-status.under-validation {
-    background: rgba(255, 193, 7, 0.1);
-    border-color: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-  }
-  .project-item-status.under-development {
-    background: rgba(33, 150, 243, 0.1);
-    border-color: rgba(33, 150, 243, 0.2);
-    color: #2196f3;
-  }
-
-  .loading-spinner {
-    padding: 2rem;
-    text-align: center;
-    color: var(--fog);
-    font-size: 0.9rem;
-  }
-
-  .no-results {
-    padding: 2rem;
-    text-align: center;
-    color: var(--fog);
-    font-size: 0.85rem;
-  }
-
-  .verify-btn {
-    width: 100%;
-    padding: 1.1rem;
-    background: var(--acid);
-    color: var(--ink);
-    border: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.78rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-  }
-  .verify-btn:hover { background: #d4ff6e; transform: translateY(-1px); }
-  .verify-btn:active { transform: translateY(0); }
-  .verify-btn.loading { opacity: 0.7; cursor: wait; }
-
-  /* Spinner */
-  .spinner {
-    display: none;
-    width: 16px; height: 16px;
-    border: 2px solid rgba(10,15,13,0.3);
-    border-top-color: var(--ink);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-  .loading .spinner { display: block; }
-  .loading .btn-label { display: none; }
-
-  /* Result Panel */
-  #result-panel {
-    margin-top: 1.75rem;
-    display: none;
-    border: 1px solid;
-    padding: 1.5rem;
-    animation: fadeUp 0.4s forwards;
-  }
-
-  #result-panel.genuine {
-    border-color: rgba(184,255,87,0.4);
-    background: rgba(184,255,87,0.05);
-  }
-  #result-panel.fraud {
-    border-color: rgba(201,75,42,0.4);
-    background: rgba(201,75,42,0.05);
-  }
-  #result-panel.unknown {
-    border-color: rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.03);
-  }
-
-  .result-status {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.2rem;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .genuine .result-status { color: var(--acid); }
-  .fraud .result-status { color: var(--rust); }
-  .unknown .result-status { color: var(--fog); }
-
-  .result-badge {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .genuine .result-badge { background: var(--acid); box-shadow: 0 0 8px var(--acid); }
-  .fraud .result-badge { background: var(--rust); box-shadow: 0 0 8px var(--rust); }
-  .unknown .result-badge { background: var(--fog); }
-
-  .result-detail {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--fog);
-    line-height: 1.8;
-  }
-
-  .result-meta {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-  .meta-item { font-size: 0.75rem; color: var(--fog); }
-  .meta-item strong { display: block; font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.25rem; color: rgba(255,255,255,0.35); }
-
-  .confidence-bar {
-    margin-top: 1rem;
-  }
-  .confidence-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-  }
-  .confidence-track {
-    height: 3px;
-    background: rgba(255,255,255,0.08);
-    position: relative;
-    overflow: hidden;
-  }
-  .confidence-fill {
-    height: 100%;
-    background: var(--acid);
-    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    width: 0%;
-  }
-  .fraud .confidence-fill { background: var(--rust); }
-
-  /* Error msg */
-  .error-msg {
-    display: none;
-    margin-top: 0.75rem;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    color: var(--rust);
-    text-transform: uppercase;
-  }
-
   /* =================== FOOTER =================== */
   footer {
     background: #060a07;
@@ -1255,7 +807,7 @@
     background: var(--acid);
   }
   .btn-cta:hover { background: white; }
-  
+
   .btn-cta.secondary {
     background: transparent;
     color: var(--acid);
@@ -1356,19 +908,303 @@
 
   /* =================== RESPONSIVE =================== */
   @media (max-width: 768px) {
-    .about-grid, .verifier-layout { grid-template-columns: 1fr; }
+    .about-grid { grid-template-columns: 1fr; }
     .hero-content { padding: 7rem 5vw 4rem; }
-    #about, #verifier, #features, #pricing, #faq, #cta { padding: 5rem 5vw; }
+    #about, #features, #pricing, #faq, #cta { padding: 5rem 5vw; }
     nav { padding: 1.2rem 5vw; }
     nav.scrolled { padding: 0.8rem 5vw; }
     .nav-links { display: none; }
 
     footer { flex-direction: column; gap: 1rem; text-align: center; }
     .footer-top { flex-direction: column; }
+    .footer-top { flex-direction: column; }
 
     .cta-buttons { flex-direction: column; }
     .footer-bottom { flex-direction: column; }
+    .verifier-layout { grid-template-columns: 1fr; }
   }
+
+  /* =================== VERIFIER SECTION =================== */
+  #verifier {
+    background: var(--ink);
+    padding: 8rem 7vw;
+    position: relative;
+  }
+
+  #verifier::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(184,255,87,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(184,255,87,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  .verifier-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8vw;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .verifier-intro .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--acid);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .verifier-intro .section-label::after {
+    content: '';
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: var(--acid);
+    opacity: 0.3;
+  }
+
+  .verifier-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 6vw, 6rem);
+    line-height: 0.95;
+    color: var(--paper);
+    margin-bottom: 1.5rem;
+  }
+
+  .verifier-desc {
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--fog);
+    line-height: 1.8;
+    max-width: 380px;
+  }
+
+  .process-steps {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.2rem 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .step:last-child { border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .step-icon {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(184,255,87,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    color: var(--acid);
+  }
+  .step-text { font-size: 0.88rem; color: var(--fog); line-height: 1.6; padding-top: 0.5rem; }
+  .step-text strong { color: var(--paper); font-weight: 500; display: block; margin-bottom: 0.2rem; }
+
+  .verifier-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(184,255,87,0.12);
+    padding: 3rem;
+    position: relative;
+    backdrop-filter: blur(8px);
+  }
+  .verifier-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--acid), transparent);
+  }
+
+  .card-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--acid);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .card-title::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--acid);
+    border-radius: 50%;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+
+  .input-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .input-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fog);
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .credit-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--paper);
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    letter-spacing: 0.08em;
+  }
+  .credit-input::placeholder { color: rgba(255,255,255,0.18); }
+  .credit-input:focus {
+    border-color: var(--acid);
+    background: rgba(184,255,87,0.04);
+  }
+
+  .verify-btn {
+    width: 100%;
+    padding: 1.1rem;
+    background: var(--acid);
+    color: var(--ink);
+    border: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    margin-top: 1.5rem;
+  }
+  .verify-btn:hover { background: #d4ff6e; transform: translateY(-1px); }
+  .verify-btn:active { transform: translateY(0); }
+  .verify-btn.loading { opacity: 0.7; cursor: wait; }
+
+  .spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(10,15,13,0.3);
+    border-top-color: var(--ink);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .loading .spinner { display: block; }
+  .loading .btn-label { display: none; }
+
+  #result-panel {
+    margin-top: 1.75rem;
+    display: none;
+    border: 1px solid;
+    padding: 1.5rem;
+    animation: fadeUp 0.4s forwards;
+  }
+
+  #result-panel.genuine {
+    border-color: rgba(184,255,87,0.4);
+    background: rgba(184,255,87,0.05);
+  }
+  #result-panel.fraud {
+    border-color: rgba(201,75,42,0.4);
+    background: rgba(201,75,42,0.05);
+  }
+  #result-panel.unknown {
+    border-color: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .result-status {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .genuine .result-status { color: var(--acid); }
+  .fraud .result-status { color: var(--rust); }
+  .unknown .result-status { color: var(--fog); }
+
+  .result-badge {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .genuine .result-badge { background: var(--acid); box-shadow: 0 0 8px var(--acid); }
+  .fraud .result-badge { background: var(--rust); box-shadow: 0 0 8px var(--rust); }
+  .unknown .result-badge { background: var(--fog); }
+
+  .result-detail {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fog);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  .result-meta {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .meta-item { font-size: 0.75rem; color: var(--fog); }
+  .meta-item strong { display: block; font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.25rem; color: rgba(255,255,255,0.35); }
+
+  .confidence-bar {
+    margin-top: 1rem;
+  }
+  .confidence-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .confidence-track {
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+  .confidence-fill {
+    height: 100%;
+    background: var(--acid);
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0%;
+  }
+  .fraud .confidence-fill { background: var(--rust); }
 
 </style>
 </head>
@@ -1521,119 +1357,53 @@
   </div>
 </section>
 
-
-
 <!-- =================== VERIFIER =================== -->
 <section id="verifier">
   <div class="verifier-layout">
 
     <div class="verifier-intro">
-      <div class="section-label reveal">Try Now</div>
-      <h2 class="verifier-heading reveal">
+      <div class="section-label">Try Now</div>
+      <h2 class="verifier-heading">
         Detect<br>
         Fraud.<br>
         Instantly.
       </h2>
-      <p class="verifier-desc reveal reveal-delay-1">
+      <p class="verifier-desc">
         Enter any carbon credit ID. Our model cross-references registry data, satellite imagery analysis, and transactional patterns to return a real-time fraud probability score.
       </p>
 
       <div class="process-steps">
-        <div class="step reveal reveal-delay-1">
+        <div class="step">
           <div class="step-icon">1</div>
           <div class="step-text"><strong>Input Credit ID</strong>Enter the unique identifier from the carbon credit registry.</div>
         </div>
-        <div class="step reveal reveal-delay-2">
+        <div class="step">
           <div class="step-icon">2</div>
           <div class="step-text"><strong>Model Analysis</strong>Cross-reference against multi-source datasets and fraud patterns.</div>
         </div>
-        <div class="step reveal reveal-delay-3">
+        <div class="step">
           <div class="step-icon">3</div>
           <div class="step-text"><strong>Instant Verdict</strong>Receive a confidence-scored fraud determination in milliseconds.</div>
         </div>
       </div>
     </div>
 
-    <!-- VERIFICATION CARD -->
-    <div class="verifier-card reveal reveal-delay-2">
-      <div class="card-title">Project Browser & Verifier</div>
+    <div class="verifier-card">
+      <div class="card-title">Verification Engine</div>
 
-      <!-- Search & Filter Bar -->
-      <div class="browser-controls">
+      <div class="input-group">
+        <label class="input-label">Carbon Credit ID</label>
         <input
           type="text"
-          id="projectSearch"
-          placeholder="Search projects by name, organization..."
-          class="search-input"
-          onkeyup="filterProjects()"
+          id="creditIdInput"
+          placeholder="e.g., VCS-2024-001"
+          class="credit-input"
         />
-        
-        <div class="filter-group">
-          <select id="statusFilter" class="filter-select" onchange="filterProjects()">
-            <option value="">All Status</option>
-            <option value="Verified">Verified</option>
-            <option value="Validated">Validated</option>
-            <option value="Under validation">Under Validation</option>
-            <option value="Under development">Under Development</option>
-            <option value="Retracted">Retracted</option>
-            <option value="Closed">Closed</option>
-          </select>
-
-          <select id="programFilter" class="filter-select" onchange="filterProjects()">
-            <option value="">All Programs</option>
-            <option value="ICR">ICR</option>
-            <option value="FCC">FCC</option>
-          </select>
-
-          <select id="countryFilter" class="filter-select" onchange="filterProjects()">
-            <option value="">All Countries</option>
-          </select>
-
-          <select id="sortBy" class="filter-select" onchange="filterProjects()">
-            <option value="id-desc">Recent Added</option>
-            <option value="id-asc">Oldest First</option>
-            <option value="name">Project Name (A-Z)</option>
-          </select>
-          
-          <button class="filter-select" style="background: rgba(184,255,87,0.1); border: 1px solid rgba(184,255,87,0.2); color: var(--acid); cursor: pointer; padding: 0.75rem 1rem; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; font-family: 'Space Mono', monospace; letter-spacing: 0.08em;" onclick="refreshProjects()" title="Force refresh from registry">🔄 Refresh</button>
-        </div>
       </div>
 
-      <!-- Projects List -->
-      <div class="project-browser">
-        <div class="project-list" id="projectList">
-          <div class="loading-spinner">Loading projects...</div>
-        </div>
-      </div>
-
-      <!-- Selected Project Info -->
-      <div id="selectedProjectInfo" style="display: none;">
-        <div style="padding: 1.5rem; background: rgba(184,255,87,0.05); border: 1px solid rgba(184,255,87,0.2); margin-top: 1.5rem;">
-          <div style="font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--acid); text-transform:uppercase; margin-bottom:0.75rem;">Selected Project</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
-            <div>
-              <div style="color:var(--fog); font-size:0.85rem; margin-bottom:0.5rem;">PROJECT NAME</div>
-              <div style="color:var(--paper); font-weight:500;" id="selectedName">—</div>
-            </div>
-            <div>
-              <div style="color:var(--fog); font-size:0.85rem; margin-bottom:0.5rem;">PROJECT ID</div>
-              <div style="color:var(--paper); font-weight:500; font-family:'Space Mono',monospace;" id="selectedId">—</div>
-            </div>
-            <div>
-              <div style="color:var(--fog); font-size:0.85rem; margin-bottom:0.5rem;">ORGANIZATION</div>
-              <div style="color:var(--paper); font-weight:500; font-size:0.9rem;" id="selectedOrg">—</div>
-            </div>
-            <div>
-              <div style="color:var(--fog); font-size:0.85rem; margin-bottom:0.5rem;">STATUS</div>
-              <div style="color:var(--acid); font-weight:500;" id="selectedStatus">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button class="verify-btn" id="verifyBtn" onclick="verifyCreditFrontend()" style="margin-top: 1.5rem;">
+      <button class="verify-btn" id="verifyBtn" onclick="verifyCreditLive()">
         <div class="spinner"></div>
-        <span class="btn-label">Run Verification</span>
+        <span class="btn-label">Verify Credit</span>
       </button>
 
       <div id="result-panel">
@@ -1661,11 +1431,11 @@
             <span id="metaTime">—</span>
           </div>
           <div class="meta-item">
-            <strong>Registry Match</strong>
-            <span id="metaRegistry">—</span>
+            <strong>Status</strong>
+            <span id="metaStatus">—</span>
           </div>
           <div class="meta-item">
-            <strong>Risk Category</strong>
+            <strong>Risk Level</strong>
             <span id="metaRisk">—</span>
           </div>
         </div>
@@ -1765,7 +1535,7 @@
   const revealEls = document.querySelectorAll('.reveal');
   const sectionEls = document.querySelectorAll('section');
   let statsAnimated = false;
-  
+
   // Observer for reveal elements (items within sections) - re-triggers on enter/leave
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(e => {
@@ -1777,7 +1547,7 @@
     });
   }, { threshold: 0.1 });
   revealEls.forEach(el => revealObserver.observe(el));
-  
+
   // Observer for sections - fade in when in view, fade out when scroll past
   const sectionObserver = new IntersectionObserver((entries) => {
     entries.forEach(e => {
@@ -1798,7 +1568,7 @@
     });
   }, { threshold: 0.15 });
   sectionEls.forEach(section => sectionObserver.observe(section));
-  
+
   // ---- Counter animation for stats ----
   function animateStats() {
     const statNumbers = document.querySelectorAll('.stat-number[data-target]');
@@ -1806,18 +1576,18 @@
       const target = parseInt(el.getAttribute('data-target'));
       const suffix = el.getAttribute('data-suffix') || '';
       const delay = parseFloat(el.closest('.stat-item').style.transitionDelay || 0) * 1000;
-      
+
       setTimeout(() => {
         el.classList.add('animate');
         const duration = 1500; // 1.5 seconds
         const start = Date.now();
-        
+
         function update() {
           const elapsed = Date.now() - start;
           const progress = Math.min(elapsed / duration, 1);
           const current = Math.floor(progress * target);
           el.textContent = current + suffix;
-          
+
           if (progress < 1) {
             requestAnimationFrame(update);
           } else {
@@ -1839,269 +1609,21 @@
     alert('Thanks for supporting open-source carbon verification!\nVisit github.com/carbonchain for contribution details.');
   }
 
-  // ---- PROJECT DATA & BROWSER ----
-  let allProjects = [];
-  let selectedProject = null;
-  let filteredProjects = [];
-  let allCountries = new Set();
-
-  // Fallback hardcoded projects
-  const fallbackProjects = [
-    {id: 456, name: "Kipaş SPP Bundle", org: "KAREN KAHRAMANMARAŞ ELEKTRİK ÜRETİM A.Ş.", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 454, name: "Kipaş PV Bundle", org: "KIPAŞ MENSUCAT İŞLETMELERİ A.Ş.", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 447, name: "Project for CO₂eq sequestration through Valle Noghera", org: "Green Future Project", program: "ICR", status: "Under development", country: "Italy"},
-    {id: 441, name: "farmB.Carbon", org: "farmB Digital Agriculture S.A.", program: "ICR", status: "Under development", country: "Argentina"},
-    {id: 436, name: "Akca WEPP", org: "MENDERES TEKSTİL SANAYİ VE TİCARET A.Ş.", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 432, name: "Energy Efficiency Measures at NFL Vijaypur Unit II", org: "National Fertilizers Limited", program: "ICR", status: "Under development", country: "India"},
-    {id: 428, name: "Ilsan Rooftop PV Bundle", org: "ILSAN TEKSTİL A.Ş.", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 427, name: "Kıyıköy WPP Capacity Addition Project", org: "Life İklim ve Enerji Ltd.", program: "ICR", status: "Under validation", country: "Turkey"},
-    {id: 426, name: "Ilsan PV Bundle", org: "ILSAN TEKSTİL A.Ş.", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 424, name: "Erzin-2 SPP", org: "IC İçtaş Güneş Enerji", program: "ICR", status: "Under validation", country: "Turkey"},
-    {id: 423, name: "Fener Wind Power Project", org: "Cengiz Enerji", program: "ICR", status: "Under validation", country: "Turkey"},
-    {id: 422, name: "Hamsi Hybrid Wind and Solar Project", org: "Cengiz Enerji", program: "ICR", status: "Under validation", country: "Turkey"},
-    {id: 421, name: "Gökzirve Wind Power Project", org: "Gökzirve Enerji A.Ş.", program: "ICR", status: "Under validation", country: "Turkey"},
-    {id: 418, name: "Energy Efficiency Measures at NFL Vijaypur Unit I", org: "National Fertilizers Limited", program: "ICR", status: "Under development", country: "India"},
-    {id: 417, name: "Sönmez Rooftop PV Bundle", org: "SÖNMEZ GLOBAL PLASTİK A.Ş.", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 413, name: "Álfadalur", org: "Skógálfar ehf.", program: "FCC", status: "Under development", country: "Iceland"},
-    {id: 412, name: "MRH Turizm Otel İşletmeleri", org: "MRH TURİZM", program: "ICR", status: "Under validation", country: "Turkey"},
-    {id: 410, name: "Minna Mosfell", org: "IceWild", program: "FCC", status: "Under development", country: "Iceland"},
-    {id: 409, name: "WM 25 PV Bundle", org: "WORLD MEDICINE İLAÇ", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 408, name: "WM 24 PV Bundle", org: "WORLD MEDICINE İLAÇ", program: "ICR", status: "Under development", country: "Turkey"},
-    {id: 407, name: "Lyngdalur", org: "Gjögurtá ehf.", program: "FCC", status: "Under development", country: "Iceland"},
-    {id: 404, name: "Artas Bundle Solar Project", org: "ARTAŞ ENERJI", program: "ICR", status: "Under validation", country: "Turkey"},
-    {id: 403, name: "Lyngdalur Wind Farm", org: "Gjögurtá ehf.", program: "FCC", status: "Under development", country: "Iceland"},
-    {id: 402, name: "Waste to Compost Project Using MSW", org: "Agra Smart City Limited", program: "ICR", status: "Under development", country: "India"},
-    {id: 401, name: "VAFRAM: Valorization of Agricultural Residue", org: "Round Foods SA de CV", program: "ICR", status: "Under development", country: "Mexico"},
-    {id: 389, name: "İzdemir Solar Power Plant", org: "İzdemir Enerji", program: "ICR", status: "Validated", country: "Turkey"},
-    {id: 388, name: "Saudi Aramco Project", org: "Saudi Aramco", program: "ICR", status: "Verified", country: "Saudi Arabia"},
-    {id: 370, name: "Permanent Abandonment of Marginal Wells", org: "SWS Carbon", program: "ICR", status: "Verified", country: "USA"},
-    {id: 359, name: "Datca WPP", org: "NAS ENERJİ A.Ş.", program: "ICR", status: "Verified", country: "Turkey"},
-    {id: 354, name: "TP Saurya Limited", org: "TP Saurya Limited", program: "ICR", status: "Verified", country: "India"},
-    {id: 349, name: "Forestal Río Aquidabán", org: "global-woods international AG", program: "ICR", status: "Verified", country: "Paraguay"}
-  ];
-
-  async function loadProjectsFromRegistry() {
-    const CACHE_KEY = 'carbonProjects';
-    const CACHE_EXPIRY_KEY = 'carbonProjectsExpiry';
-    const CACHE_HOURS = 24; // Cache for 24 hours
-    
-    // Try to load from cache first
-    const cachedData = localStorage.getItem(CACHE_KEY);
-    const cacheExpiry = localStorage.getItem(CACHE_EXPIRY_KEY);
-    const now = Date.now();
-    
-    if (cachedData && cacheExpiry && now < parseInt(cacheExpiry)) {
-      // Cache is valid, use it
-      try {
-        const cached = JSON.parse(cachedData);
-        allProjects = cached;
-        cached.forEach(p => {
-          if (p.country && p.country !== 'Unknown') allCountries.add(p.country);
-        });
-        filteredProjects = [...allProjects];
-        populateCountryFilter();
-        renderProjects(filteredProjects);
-        console.log('Loaded projects from localStorage cache');
-        
-        // Fetch fresh data in background
-        fetchAndUpdateCache();
-        return;
-      } catch (e) {
-        console.warn('Cache parse error:', e);
-      }
-    }
-    
-    // No valid cache, show loading and fetch
-    document.getElementById('projectList').innerHTML = '<div class="loading-spinner">Loading projects...</div>';
-    fetchAndUpdateCache();
-  }
-  
-  async function fetchAndUpdateCache() {
-    const CACHE_KEY = 'carbonProjects';
-    const CACHE_EXPIRY_KEY = 'carbonProjectsExpiry';
-    const CACHE_HOURS = 1; // Cache for 1 hour for real-time data
-
-    try {
-      console.log('[CarbonChain] Fetching flagged credits from leaderboard API...');
-
-      // Fetch flagged credits from your leaderboard API
-      const response = await fetch(`${API_BASE}/api/leaderboard?limit=50`);
-
-      if (!response.ok) {
-        throw new Error(`Leaderboard API error: ${response.status}`);
-      }
-
-      const leaderboardData = await response.json();
-      console.log('[CarbonChain] Received leaderboard data:', leaderboardData);
-
-      // Transform leaderboard data to project format for display
-      const projects = leaderboardData.map((credit, index) => {
-        const verdictStatus = {
-          'FAIL': 'High Risk',
-          'WARNING': 'Medium Risk',
-          'PASS': 'Verified'
-        };
-
-        return {
-          id: credit.creditId.replace('VCS-', '').replace('ACR-', '').replace('GS-', ''),
-          name: `${credit.creditId} - ${credit.category} Credit`,
-          org: credit.issuer.toUpperCase() + ' Registry',
-          program: credit.issuer.toUpperCase(),
-          status: verdictStatus[credit.verdict] || credit.verdict,
-          country: 'Global', // Leaderboard doesn't include country
-          trustScore: credit.trustScore,
-          verdict: credit.verdict,
-          flagCount: credit.flagCount,
-          lastVerified: credit.lastVerified,
-          creditId: credit.creditId
-        };
-      });
-
-      if (projects.length > 0) {
-        // Save to cache
-        localStorage.setItem(CACHE_KEY, JSON.stringify(projects));
-        localStorage.setItem(CACHE_EXPIRY_KEY, (Date.now() + CACHE_HOURS * 60 * 60 * 1000).toString());
-
-        allProjects = projects;
-        allCountries.clear();
-        // Add status as "countries" for filtering
-        projects.forEach(p => {
-          if (p.status) allCountries.add(p.status);
-        });
-        filteredProjects = [...allProjects];
-        populateCountryFilter();
-        renderProjects(filteredProjects);
-        console.log(`[CarbonChain] Loaded ${projects.length} flagged credits from leaderboard`);
-      } else {
-        throw new Error('No flagged credits found in leaderboard');
-      }
-    } catch (error) {
-      console.error('[CarbonChain] Leaderboard fetch error:', error);
-
-      // Show error message instead of fallback data
-      document.getElementById('projectList').innerHTML = `
-        <div class="error-message" style="color: var(--rust); padding: 2rem; text-align: center;">
-          <h3>Unable to load flagged credits</h3>
-          <p>Error: ${error.message}</p>
-          <button onclick="refreshProjects()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--acid); color: var(--ink); border: none; border-radius: 4px; cursor: pointer;">
-            Retry
-          </button>
-        </div>
-      `;
-    }
-  }
-  
-  function refreshProjects() {
-    // Clear cache and force refresh
-    localStorage.removeItem('carbonProjects');
-    localStorage.removeItem('carbonProjectsExpiry');
-    allCountries.clear();
-    document.getElementById('projectList').innerHTML = '<div class="loading-spinner">Refreshing projects...</div>';
-    fetchAndUpdateCache();
-  }
-
-  function populateCountryFilter() {
-    const countrySelect = document.getElementById('countryFilter');
-    const countries = Array.from(allCountries).sort();
-    
-    countries.forEach(country => {
-      const option = document.createElement('option');
-      option.value = country;
-      option.textContent = country;
-      countrySelect.appendChild(option);
-    });
-  }
-
-  function initProjectBrowser() {
-    loadProjectsFromRegistry();
-  }
-
-  function renderProjects(projects) {
-    const list = document.getElementById('projectList');
-    
-    if (projects.length === 0) {
-      list.innerHTML = '<div class="no-results">No projects found. Try adjusting your filters.</div>';
-      return;
-    }
-
-    list.innerHTML = projects.map(project => `
-      <div class="project-item ${selectedProject?.id === project.id ? 'selected' : ''}" onclick="selectProject(${project.id})">
-        <div class="project-item-content">
-          <div class="project-item-name">ID #${project.id}: ${project.name}</div>
-          <div class="project-item-details">
-            <span>${project.org}</span>
-            <span style="color:var(--acid);">${project.program}</span>
-            ${project.country ? `<span style="color:var(--fog); font-size:0.7rem;">${project.country}</span>` : ''}
-          </div>
-        </div>
-        <div class="project-item-status ${getStatusClass(project.status)}">${project.status}</div>
-      </div>
-    `).join('');
-  }
-
-  function getStatusClass(status) {
-    if (status.includes('Verified')) return 'verified';
-    if (status.includes('Validated')) return 'verified';
-    if (status.includes('validation')) return 'under-validation';
-    if (status.includes('development')) return 'under-development';
-    return '';
-  }
-
-  function selectProject(projectId) {
-    selectedProject = allProjects.find(p => p.id === projectId);
-    
-    if (selectedProject) {
-      document.getElementById('selectedProjectInfo').style.display = 'block';
-      document.getElementById('selectedName').textContent = selectedProject.name;
-      document.getElementById('selectedId').textContent = `#${selectedProject.id}`;
-      document.getElementById('selectedOrg').textContent = selectedProject.org;
-      document.getElementById('selectedStatus').textContent = selectedProject.status;
-      
-      renderProjects(filteredProjects);
-    }
-  }
-
-  function filterProjects() {
-    const search = document.getElementById('projectSearch').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const programFilter = document.getElementById('programFilter').value;
-    const countryFilter = document.getElementById('countryFilter').value;
-    const sortBy = document.getElementById('sortBy').value;
-
-    filteredProjects = allProjects.filter(project => {
-      const matchSearch = search === '' || 
-                         project.name.toLowerCase().includes(search) ||
-                         project.org.toLowerCase().includes(search) ||
-                         project.id.toString().includes(search);
-      
-      const matchStatus = statusFilter === '' || project.status === statusFilter;
-      const matchProgram = programFilter === '' || project.program === programFilter;
-      const matchCountry = countryFilter === '' || project.country === countryFilter;
-      
-      return matchSearch && matchStatus && matchProgram && matchCountry;
-    });
-
-    // Sort
-    if (sortBy === 'id-asc') filteredProjects.sort((a, b) => a.id - b.id);
-    else if (sortBy === 'id-desc') filteredProjects.sort((a, b) => b.id - a.id);
-    else if (sortBy === 'name') filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
-
-    renderProjects(filteredProjects);
-  }
-
-  // ---- API CONFIGURATION ----
+  // ---- API Configuration ----
   const API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:8000'
     : 'https://carboncheck-production.up.railway.app';
-  console.log('[CarbonChain] API Base URL:', API_BASE);
 
-  // ---- VERIFY FUNCTION ----
-  async function verifyCreditFrontend() {
+  console.log('[CarbonCheck] API Base:', API_BASE);
+
+  // ---- LIVE VERIFICATION ----
+  async function verifyCreditLive() {
+    const creditId = document.getElementById('creditIdInput').value.trim();
     const panel = document.getElementById('result-panel');
     const btn = document.getElementById('verifyBtn');
 
-    if (!selectedProject) {
-      alert('Please select a project to verify');
+    if (!creditId) {
+      alert('Please enter a credit ID');
       return;
     }
 
@@ -2110,9 +1632,8 @@
     btn.disabled = true;
 
     try {
-      const creditId = selectedProject.id.toString();
-      console.log('[CarbonChain] Verifying credit ID:', creditId);
-      
+      console.log('[CarbonCheck] Verifying credit:', creditId);
+
       const response = await fetch(`${API_BASE}/api/verify`, {
         method: 'POST',
         headers: {
@@ -2126,11 +1647,12 @@
       }
 
       const data = await response.json();
-      console.log('[CarbonChain] Verification response:', data);
+      console.log('[CarbonCheck] Verification result:', data);
+
       displayResult(data);
     } catch (error) {
-      console.error('[CarbonChain] Verification error:', error);
-      alert('Error verifying credit. Please try again.');
+      console.error('[CarbonCheck] Verification error:', error);
+      alert('Error verifying credit. Please check your input and try again.');
       panel.style.display = 'none';
     } finally {
       btn.classList.remove('loading');
@@ -2140,29 +1662,27 @@
 
   function displayResult(data) {
     const panel = document.getElementById('result-panel');
-    
-    // Determine verdict based on trust_score from backend
+
+    // Determine verdict based on trust_score
     let verdict = 'unknown';
     let verdictText = '? UNVERIFIED';
     let detailText = 'Unable to determine status';
     let riskLevel = 'Indeterminate';
-    
-    const trustScore = data.trust_score || 0;
-    
-    if (trustScore >= 75) {
+
+    if (data.trust_score >= 75) {
       verdict = 'genuine';
-      verdictText = '✓ VERIFIED';
-      detailText = 'Project verified against registry — no anomalies detected\nDouble-count check: CLEAR · Baseline integrity: PASS';
+      verdictText = '✓ GENUINE';
+      detailText = 'Project verified against registry\nDouble-count check: CLEAR\nBaseline integrity: PASS';
       riskLevel = 'Low';
-    } else if (trustScore < 50) {
+    } else if (data.trust_score < 50) {
       verdict = 'fraud';
-      verdictText = '✗ FLAGGED';
-      detailText = 'Fraud indicators detected — manual review recommended\nDouble-count flag: TRIGGERED · Baseline anomaly: DETECTED';
+      verdictText = '✗ SUSPICIOUS';
+      detailText = 'Fraud indicators detected\nRecommended: Manual review';
       riskLevel = 'High';
     } else {
       verdict = 'unknown';
       verdictText = '? UNDER REVIEW';
-      detailText = 'Project status unclear — additional verification needed\nManual review recommended before acceptance';
+      detailText = 'Additional verification needed\nManual review recommended';
       riskLevel = 'Medium';
     }
 
@@ -2171,20 +1691,20 @@
 
     document.getElementById('resultVerdict').textContent = verdictText;
     document.getElementById('resultDetail').textContent = detailText;
-    document.getElementById('metaId').textContent = `#${data.credit_id || selectedProject.id}`;
+    document.getElementById('metaId').textContent = data.credit_id;
     document.getElementById('metaTime').textContent = new Date().toLocaleTimeString();
-    document.getElementById('metaRegistry').textContent = data.registry || 'Carbon Registry';
+    document.getElementById('metaStatus').textContent = data.registry || 'Unknown';
     document.getElementById('metaRisk').textContent = riskLevel;
 
-    const conf = Math.round(trustScore);
-    document.getElementById('confidenceVal').textContent = conf + '%';
+    const confidence = Math.round(data.trust_score);
+    document.getElementById('confidenceVal').textContent = confidence + '%';
     requestAnimationFrame(() => {
-      document.getElementById('confidenceFill').style.width = conf + '%';
+      document.getElementById('confidenceFill').style.width = confidence + '%';
     });
   }
 
-  // Initialize on page load
-  window.addEventListener('DOMContentLoaded', initProjectBrowser);
+  console.log('[CarbonCheck] Frontend initialized - Ready for verification');
+
 </script>
 </body>
 </html>
