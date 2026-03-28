@@ -52,7 +52,7 @@ Deploy a **verification-only** carbon credit trust scoring platform with simplif
 
 | Component | Platform | Status | URL |
 |-----------|----------|--------|-----|
-| Backend | Railway | ✅ Deployed | https://carboncheck-backend-production.up.railway.app |
+| Backend | Railway | ✅ Deployed | https://carboncheck-production.up.railway.app |
 | Frontend | Vercel | ⏳ Pending | TBD |
 | Database | Supabase | ✅ Active | oyevylxqjeokjfsuacau.supabase.co |
 
@@ -162,7 +162,7 @@ git push beni 001-carboncheck-trust-journeys
 
 3. Environment Variables in Vercel:
 ```bash
-NEXT_PUBLIC_API_URL=https://carboncheck-backend-production.up.railway.app
+NEXT_PUBLIC_API_URL=https://carboncheck-production.up.railway.app
 NEXT_PUBLIC_SUPABASE_URL=https://oyevylxqjeokjfsuacau.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<get-from-supabase-settings>
 ```
@@ -179,26 +179,26 @@ Get Supabase Anon Key:
 
 ### Backend Health
 ```bash
-curl https://carboncheck-backend-production.up.railway.app/health
+curl https://carboncheck-production.up.railway.app/health
 ```
 
 ### Single Verification
 ```bash
-curl -X POST https://carboncheck-backend-production.up.railway.app/api/verify \
+curl -X POST https://carboncheck-production.up.railway.app/api/verify \
   -H "Content-Type: application/json" \
   -d '{"credit_id": "VCS-2024-001"}'
 ```
 
 ### Bulk Verification
 ```bash
-curl -X POST https://carboncheck-backend-production.up.railway.app/api/verify/bulk \
+curl -X POST https://carboncheck-production.up.railway.app/api/verify/bulk \
   -H "Content-Type: application/json" \
   -d '{"credit_ids": ["VCS-2024-001", "GOLD-2023-556"]}'
 ```
 
 ### Leaderboard
 ```bash
-curl https://carboncheck-backend-production.up.railway.app/api/leaderboard?limit=10
+curl https://carboncheck-production.up.railway.app/api/leaderboard?limit=10
 ```
 
 ---
@@ -217,8 +217,8 @@ curl https://carboncheck-backend-production.up.railway.app/api/leaderboard?limit
 
 | Service | URL |
 |---------|-----|
-| Backend API | https://carboncheck-backend-production.up.railway.app |
-| Backend Docs | https://carboncheck-backend-production.up.railway.app/docs |
+| Backend API | https://carboncheck-production.up.railway.app |
+| Backend Docs | https://carboncheck-production.up.railway.app/docs |
 | Supabase DB | https://oyevylxqjeokjfsuacau.supabase.co |
 | Frontend | TBD after Vercel deployment |
 
@@ -252,3 +252,55 @@ curl https://carboncheck-backend-production.up.railway.app/api/leaderboard?limit
 Continue from Step 2: Supabase Database Setup
 
 ---
+
+
+ CONFIRMED: Your Backend Uses Real Satellite Data
+You ARE using:
+
+✅ Sentinel-2 Satellite (Copernicus) - Optical/multispectral imaging
+✅ NDVI Processing - Vegetation health index calculation
+✅ AI/ML Fraud Detection - Anomaly detection layer
+✅ Ground Layer - Registry validation from Verra, Gold Standard
+✅ Scoring Layer - Trust score computation
+Multi-Layer Verification Engine:
+
+You DON'T have LIDAR (not critical for verification-only, but good to add later)
+
+🎯 Your Product is Ready to Deploy!
+This IS a legitimate verification tool with real satellite integration. Now let's make it LIVE:
+
+STEP 2: Create Supabase Tables (5 minutes)
+Go to: https://oyevylxqjeokjfsuacau.supabase.co
+Click SQL Editor
+Click New Query
+Paste this:
+Click Execute or Cmd+Enter
+Done! ✅
+
+STEP 3: Deploy Frontend to Vercel (10 minutes)
+Push your code:
+
+Deploy on Vercel:
+
+Go to https://vercel.com
+Click "Add New Project"
+Select Beni-004/carboncheck from GitHub
+Root Directory: apps/web
+Click Deploy
+Add Environment Variables:
+
+Get Supabase Anon Key:
+
+Supabase → Project Settings → API → Copy "anon" public key
+Redeploy after adding variables
+Done! ✅
+
+STEP 4: Test Everything
+🚀 Then You're LIVE!
+Your entire product will be deployed with:
+
+✅ Real satellite data verification
+✅ AI/ML fraud detection
+✅ Trust scoring
+✅ Beautiful frontend
+Which step are you doing now? Supabase DB or Vercel frontend?
