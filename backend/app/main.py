@@ -33,19 +33,20 @@ frontend_url = os.getenv("FRONTEND_URL", "")
 allowed_origins = [
     "http://localhost:3000",  # Local development
     "http://localhost:3001",  # Alternate local port
+    "https://carboncheck-web.vercel.app",  # Production frontend (hardcoded fallback)
 ]
 
 if frontend_url:
     allowed_origins.append(frontend_url)
-    # Also allow preview deployments if using Vercel pattern
-    if "vercel.app" in frontend_url:
-        allowed_origins.append("https://*.vercel.app")
+    logger.info(f"CORS: Added frontend URL from environment: {frontend_url}")
+else:
+    logger.warning("CORS: FRONTEND_URL not set, using fallback origins only")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if frontend_url else ["*"],
+    allow_origins=allowed_origins,  # Always use the specific origins list
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
