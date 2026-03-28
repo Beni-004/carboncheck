@@ -142,7 +142,7 @@ export class ProgrammeService {
     programme.currentStage = ProgrammeStage.REJECTED;
     programme.txType = TxType.REJECT;
     programme.txTime = new Date().getTime();
-    programme.txRef = reason;
+    programme.txRef = reason || 'Rejected';
 
     return this.programmeRepo.save(programme);
   }
@@ -163,7 +163,7 @@ export class ProgrammeService {
     programme.txType = TxType.ISSUE;
     programme.txTime = new Date().getTime();
     programme.creditUpdateTime = new Date().getTime();
-    programme.txRef = dto.comment;
+    programme.txRef = dto.comment || 'Credits issued';
 
     return this.programmeRepo.save(programme);
   }
@@ -187,7 +187,7 @@ export class ProgrammeService {
     programme.txType = TxType.TRANSFER;
     programme.txTime = new Date().getTime();
     programme.creditUpdateTime = new Date().getTime();
-    programme.txRef = dto.comment;
+    programme.txRef = dto.comment || 'Credits transferred';
 
     if (programme.creditBalance > 0) {
       programme.currentStage = ProgrammeStage.CREDIT_TRANSFERRED;
@@ -214,7 +214,7 @@ export class ProgrammeService {
     programme.txType = TxType.RETIRE;
     programme.txTime = new Date().getTime();
     programme.creditUpdateTime = new Date().getTime();
-    programme.txRef = dto.comment;
+    programme.txRef = dto.comment || 'Credits retired';
     programme.currentStage = ProgrammeStage.CREDIT_RETIRED;
 
     return this.programmeRepo.save(programme);
