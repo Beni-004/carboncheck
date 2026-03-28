@@ -8,7 +8,8 @@ export default () => ({
     username: process.env.REGISTRY_DB_USER || 'postgres',
     password: process.env.REGISTRY_DB_PASSWORD || '',
     database: process.env.REGISTRY_DB_NAME || 'carbon_registry',
-    synchronize: process.env.NODE_ENV !== 'production',
+    // Allow sync via env var override for initial setup, otherwise use NODE_ENV
+    synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true' || process.env.NODE_ENV !== 'production',
     autoLoadEntities: true,
     logging: process.env.NODE_ENV !== 'production' ? ['error', 'query'] : ['error'],
   },
